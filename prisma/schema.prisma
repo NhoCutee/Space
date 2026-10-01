@@ -1,0 +1,159 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  username     String        @unique
+  email        String        @unique
+  displayName  String
+  avatarUrl    String?
+  bio          String?
+  interests    String        @default("[]") // JSON string array of tags
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  memberships  SpaceMember[]
+  drops        Drop[]
+  reactions    Reaction[]
+  comments     Comment[]
+  collections  Collection[]
+  notificationsReceived Notification[] @relation("RecipientUser")
+  notificationsSent     Notification[] @relation("ActorUser")
+}
+
+model Space {
+  id             String        @id @default(uuid())
+  slug           String        @unique
+  name           String
+  description    String
+  category       String
+  coverImageUrl  String
+  themeColor     String        @default("#18181b")
+  guidelines     String?
+  membersCount   Int           @default(1)
+  dropsCount     Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
+  members        SpaceMember[]
+  drops          Drop[]
+  notifications  Notification[]
+}
+
+model SpaceMember {
+  id        String   @id @default(uuid())
+  spaceId   String
+  userId    String
+  role      String   @default("MEMBER") // MEMBER, MODERATOR, CREATOR
+  joinedAt  DateTime @default(now())
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, userId])
+}
+
+model Drop {
+  id             String           @id @default(uuid())
+  spaceId        String
+  userId         String
+  title          String
+  content        String?
+  locationName   String?
+  specs          String?          // JSON: camera, gear, materials, switches
+  palette        String           @default("[]") // JSON array of hex colors
+  isCurated      Boolean          @default(false)
+  reactionsCount Int              @default(0)
+  commentsCount  Int              @default(0)
+  savesCount     Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+  space          Space            @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media          DropMedia[]
+  reactions      Reaction[]
+  comments       Comment[]
+  collectionItems CollectionItem[]
+  notifications  Notification[]
+}
+
+model DropMedia {
+  id          String   @id @default(uuid())
+  dropId      String
+  url         String
+  width       Int      @default(1200)
+  height      Int      @default(800)
+  aspectRatio Float    @default(1.5)
+  blurhash    String?
+  sortOrder   Int      @default(0)
+  drop        Drop     @relation(fields: [dropId], references: [id], onDelete: Cascade)
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  dropId    String
+  userId    String
+  type      String   // INSPIRED, AESTHETIC, CLEAN, HELPFUL, FIRE
+  createdAt DateTime @default(now())
+  drop      Drop     @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([dropId, userId, type])
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  dropId    String
+  userId    String
+  parentId  String?
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  drop      Drop      @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("ThreadedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("ThreadedComments")
+}
+
+model Collection {
+  id          String           @id @default(uuid())
+  userId      String
+  title       String
+  description String?
+  isPrivate   Boolean          @default(false)
+  itemsCount  Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @default(now()) @updatedAt
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       CollectionItem[]
+}
+
+model CollectionItem {
+  id           String     @id @default(uuid())
+  collectionId String
+  dropId       String
+  position     Int        @default(0)
+  addedAt      DateTime   @default(now())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  drop         Drop       @relation(fields: [dropId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, dropId])
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  recipientId String
+  actorId     String
+  dropId      String?
+  spaceId     String?
+  type        String    // REACTION, COMMENT, COLLECTION_SAVE, SPACE_JOIN, CURATOR_PICK
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+  recipient   User      @relation("RecipientUser", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor       User      @relation("ActorUser", fields: [actorId], references: [id], onDelete: Cascade)
+  drop        Drop?     @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  space       Space?    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+}
