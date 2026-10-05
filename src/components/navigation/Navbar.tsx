@@ -2,10 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Compass, Plus, Search, Layers, Moon, Sun, ChevronDown } from 'lucide-react';
+import { Plus, Search, Layers, Moon, Sun, Sparkles, Compass } from 'lucide-react';
 import { PersonaSwitcher } from './PersonaSwitcher';
 import { SearchDialog } from './SearchDialog';
-import { CreateSpaceModal } from '@/components/spaces/CreateSpaceModal';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
@@ -23,8 +22,6 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-  const [isCreateSpaceModalOpen, setIsCreateSpaceModalOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -143,79 +140,14 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
               </button>
             )}
 
-            {/* Unified Creation CTA Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-foreground text-background hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer"
-                aria-expanded={isCreateMenuOpen}
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="hidden sm:inline">Tạo mới</span>
-                <ChevronDown
-                  className={`w-3 h-3 transition-transform duration-200 ${
-                    isCreateMenuOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {isCreateMenuOpen && (
-                <>
-                  {/* Backdrop for click outside */}
-                  <div
-                    className="fixed inset-0 z-30 bg-transparent"
-                    onClick={() => setIsCreateMenuOpen(false)}
-                  />
-
-                  {/* Dropdown Menu with 2 rows */}
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-zinc-200/90 dark:border-border/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl shadow-xl dark:shadow-2xl z-40 p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                    {/* Row 1: Tạo Space */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreateMenuOpen(false);
-                        setIsCreateSpaceModalOpen(true);
-                      }}
-                      className="w-full flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-all text-left group cursor-pointer"
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                        <Compass className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-zinc-900 dark:text-foreground flex items-center gap-1.5">
-                          <span>Tạo Space</span>
-                          <span className="text-[10px] font-normal text-indigo-500 dark:text-indigo-400 font-mono">(Community)</span>
-                        </div>
-                        <p className="text-[11px] text-zinc-500 dark:text-muted-foreground leading-snug mt-0.5">
-                          Sáng lập cộng đồng trực quan hoặc không gian thẩm mỹ mới
-                        </p>
-                      </div>
-                    </button>
-
-                    {/* Row 2: Tạo Drop */}
-                    <Link
-                      href="/drop/new"
-                      onClick={() => setIsCreateMenuOpen(false)}
-                      className="w-full flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-all text-left group cursor-pointer"
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-zinc-900 dark:text-foreground flex items-center gap-1.5">
-                          <span>Tạo Drop</span>
-                          <span className="text-[10px] font-normal text-emerald-500 dark:text-emerald-400 font-mono">(Visual Post)</span>
-                        </div>
-                        <p className="text-[11px] text-zinc-500 dark:text-muted-foreground leading-snug mt-0.5">
-                          Đăng tải hình ảnh, câu chuyện và thông số kỹ thuật vào Space
-                        </p>
-                      </div>
-                    </Link>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Unified Creation CTA Button (Desktop/Tablet; Mobile uses BottomNav center action) */}
+            <Link
+              href="/create"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-foreground text-background hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Tạo mới</span>
+            </Link>
 
             {/* Persona Switcher for pair-testing */}
             {user && (
@@ -233,12 +165,6 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
       <SearchDialog
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-      />
-
-      {/* Create Space Modal */}
-      <CreateSpaceModal
-        isOpen={isCreateSpaceModalOpen}
-        onClose={() => setIsCreateSpaceModalOpen(false)}
       />
     </>
   );

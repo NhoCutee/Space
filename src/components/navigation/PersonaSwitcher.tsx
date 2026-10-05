@@ -60,20 +60,21 @@ export function PersonaSwitcher({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-border/80 bg-background/80 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+        className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium border border-border/80 bg-background/80 hover:bg-accent hover:text-accent-foreground transition-all duration-200 cursor-pointer"
+        aria-label="Chuyển tài khoản persona"
       >
         <img
           src={currentAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
           alt={currentDisplayName}
           className="w-5 h-5 rounded-full object-cover ring-1 ring-border"
         />
-        <span className="font-semibold text-foreground truncate max-w-[100px]">
+        <span className="font-semibold text-foreground truncate max-w-[100px] hidden sm:inline">
           {currentDisplayName}
         </span>
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider bg-secondary px-1.5 py-0.5 rounded-md hidden sm:inline-block">
           Demo
         </span>
-        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden sm:inline" />
       </button>
 
       {isOpen && (
