@@ -1,6 +1,9 @@
 import { getSpaceBySlug } from '@/actions/spaces';
+import { getSpaceComments } from '@/actions/comments';
+import { getCurrentUser } from '@/lib/auth';
 import { SpaceMasthead } from '@/components/spaces/SpaceMasthead';
-import { DropMasonryCanvas } from '@/components/drops/DropMasonryCanvas';
+import { DropMasonryCanvas } from '@/components/drops';
+import { SpaceCommentsSection } from '@/components/spaces/SpaceCommentsSection';
 import { notFound } from 'next/navigation';
 import { Sparkles, Image as ImageIcon, Users, Info } from 'lucide-react';
 import Link from 'next/link';
@@ -15,12 +18,14 @@ interface SpacePageProps {
 
 export default async function SpacePage({ params }: SpacePageProps) {
   const { slug } = await params;
+  const user = await getCurrentUser();
   const space = await getSpaceBySlug(slug);
 
   if (!space) {
     notFound();
   }
 
+  const commentsData = await getSpaceComments(space.id);
   const drops = space.drops || [];
 
   return (
@@ -87,6 +92,18 @@ export default async function SpacePage({ params }: SpacePageProps) {
           spaceSlug={space.slug}
           emptyTitle={`No Drops published to ${space.name} yet`}
           emptyDescription="Be the first to drop visual inspiration into this community."
+        />
+      </div>
+
+      {/* Space Community Comments & Realtime Discussion */}
+      <div className="mt-12">
+        <SpaceCommentsSection
+          spaceId={space.id}
+          spaceSlug={space.slug}
+          spaceName={space.name}
+          initialComments={commentsData.comments}
+          currentUser={user}
+          initialCommentsCount={commentsData.totalCount}
         />
       </div>
 
