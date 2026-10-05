@@ -12,7 +12,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { timeAgo } from '@/lib/utils';
-import { DropDetailInteractions } from '@/components/drops/DropDetailInteractions';
+import { DropDetailInteractions } from '@/components/drops';
 
 export const dynamic = 'force-dynamic';
 

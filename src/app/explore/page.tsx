@@ -82,10 +82,10 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
               Reset filters
             </Link>
             <Link
-              href="/s/new"
+              href="/create"
               className="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold bg-foreground text-background hover:opacity-90 transition-opacity"
             >
-              + Create this Space
+              + Create a Space
             </Link>
           </div>
         </div>

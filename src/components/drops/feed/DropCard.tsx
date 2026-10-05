@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { MapPin, Cpu, ImageOff, MessageSquare, Bookmark } from 'lucide-react';
 import { timeAgo } from '@/lib/utils';
-import { ReactionButton } from './ReactionButton';
-import { SaveToCollectionModal } from './SaveToCollectionModal';
+import { ReactionButton } from '../interactions/ReactionButton';
+import { SaveToCollectionModal } from '../interactions/SaveToCollectionModal';
 
 export interface DropCardProps {
   drop: {

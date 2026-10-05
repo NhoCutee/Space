@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Trash2, Edit3, Lock, Globe, Loader2, X } from 'lucide-react';
+import { Trash2, Edit3, Loader2, X } from 'lucide-react';
 import { updateCollection, deleteCollection } from '@/actions/collections';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';

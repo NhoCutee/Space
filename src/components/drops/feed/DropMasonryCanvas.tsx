@@ -29,7 +29,7 @@ export function DropMasonryCanvas({
         </p>
         <div className="mt-6">
           <Link
-            href={spaceSlug ? `/drop/new?space=${spaceSlug}` : '/drop/new'}
+            href={spaceSlug ? `/create?space=${spaceSlug}` : '/create'}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-foreground text-background hover:opacity-90 transition-opacity"
           >
             <Sparkles className="w-3.5 h-3.5" />

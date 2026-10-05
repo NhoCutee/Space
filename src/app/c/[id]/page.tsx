@@ -1,10 +1,10 @@
 import { getCollectionById } from '@/actions/collections';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Lock, Globe, Layers, User } from 'lucide-react';
+import { ArrowLeft, Lock, Globe, Layers } from 'lucide-react';
 import { CollectionDetailActions } from '@/components/collections/CollectionDetailActions';
 import { RemoveFromCollectionButton } from '@/components/collections/RemoveFromCollectionButton';
-import { DropCard } from '@/components/drops/DropCard';
+import { DropCard } from '@/components/drops';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bookmark, Lock, Globe, Layers } from 'lucide-react';
+import { Lock, Globe, Layers } from 'lucide-react';
 import { CollectionSummary } from '@/actions/collections';
 
 interface CollectionCardProps {
