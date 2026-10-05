@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { setCurrentUser, clearCurrentUser } from '@/lib/auth';
+import { setCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 export async function switchPersona(username: string) {
@@ -35,44 +35,76 @@ export async function registerUser(username: string, displayName: string, email:
   return user;
 }
 
-export async function completeOnboarding(interests: string[]) {
+export async function completeOnboarding(
+  interests: string[],
+  selectedSpaceIds?: string[]
+): Promise<{ success: boolean; error?: string }> {
   const cookieUser = await import('@/lib/auth').then((m) => m.getCurrentUser());
-  if (!cookieUser) throw new Error('No user to onboard');
-
-  await prisma.user.update({
-    where: { id: cookieUser.id },
-    data: {
-      interests: JSON.stringify(interests),
-    },
-  });
-
-  // Auto-join matching spaces
-  const matchingSpaces = await prisma.space.findMany({
-    where: {
-      OR: interests.map((interest) => ({
-        category: { contains: interest },
-      })),
-    },
-    take: 4,
-  });
-
-  for (const s of matchingSpaces) {
-    await prisma.spaceMember.upsert({
-      where: {
-        spaceId_userId: {
-          spaceId: s.id,
-          userId: cookieUser.id,
-        },
-      },
-      update: {},
-      create: {
-        spaceId: s.id,
-        userId: cookieUser.id,
-        role: 'MEMBER',
-      },
-    });
+  if (!cookieUser) {
+    return { success: false, error: 'Bạn cần đăng nhập để hoàn tất thiết lập.' };
   }
 
-  revalidatePath('/');
-  return { success: true };
+  if (interests.length < 3) {
+    return { success: false, error: 'Vui lòng chọn ít nhất 3 chủ đề quan tâm.' };
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: cookieUser.id },
+      data: {
+        interests: JSON.stringify(interests),
+      },
+    });
+
+    let spacesToJoin: string[] = selectedSpaceIds || [];
+
+    // If no specific spaces selected, auto-match from interests
+    if (spacesToJoin.length === 0) {
+      const matchingSpaces = await prisma.space.findMany({
+        where: {
+          OR: interests.map((interest) => ({
+            category: { contains: interest },
+          })),
+        },
+        take: 4,
+        select: { id: true },
+      });
+      spacesToJoin = matchingSpaces.map((s) => s.id);
+    }
+
+    for (const spaceId of spacesToJoin) {
+      const existing = await prisma.spaceMember.findUnique({
+        where: {
+          spaceId_userId: {
+            spaceId,
+            userId: cookieUser.id,
+          },
+        },
+      });
+
+      if (!existing) {
+        await prisma.$transaction([
+          prisma.spaceMember.create({
+            data: {
+              spaceId,
+              userId: cookieUser.id,
+              role: 'MEMBER',
+            },
+          }),
+          prisma.space.update({
+            where: { id: spaceId },
+            data: { membersCount: { increment: 1 } },
+          }),
+        ]);
+      }
+    }
+
+    revalidatePath('/');
+    revalidatePath('/explore');
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to complete onboarding:', err);
+    return { success: false, error: 'Lỗi khi lưu thông tin onboarding.' };
+  }
 }
+
