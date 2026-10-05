@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { buildBaseSlug, withUniqueSlug, insertSpaceWithCreator } from '@/lib/spaces/slug';
 
 export interface DropMediaInput {
   url: string;
@@ -12,25 +13,47 @@ export interface DropMediaInput {
   blurhash?: string;
 }
 
+export interface CreateDropNewSpaceInput {
+  name: string;
+  description: string;
+  category: string;
+  coverImageUrl?: string;
+  slug?: string;
+  themeColor?: string;
+  guidelines?: string;
+}
+
 export interface CreateDropInput {
-  spaceId: string;
-  title: string;
+  spaceId?: string;
+  newSpace?: CreateDropNewSpaceInput;
+  drop?: {
+    title: string;
+    content?: string;
+    locationName?: string;
+    specs?: Record<string, string>;
+    palette?: string[];
+    media: DropMediaInput[];
+  };
+  // Flat properties for backwards compatibility
+  title?: string;
   content?: string;
   locationName?: string;
   specs?: Record<string, string>;
   palette?: string[];
-  media: DropMediaInput[];
+  media?: DropMediaInput[];
 }
 
 export interface CreateDropResult {
   success: boolean;
   dropId?: string;
   spaceSlug?: string;
+  spaceId?: string;
+  spaceName?: string;
   error?: string;
 }
 
 /**
- * Creates a visual Drop and publishes it into a Space.
+ * Single authoritative mutation to create a visual Drop and optionally create a new Space atomically.
  */
 export async function createDrop(input: CreateDropInput): Promise<CreateDropResult> {
   const user = await getCurrentUser();
@@ -38,55 +61,117 @@ export async function createDrop(input: CreateDropInput): Promise<CreateDropResu
     return { success: false, error: 'You must be signed in to create a Drop.' };
   }
 
-  // 1. Validate required fields
-  if (!input.title || input.title.trim().length < 2) {
+  // 1. Normalize Drop Input Fields
+  const title = input.drop?.title ?? input.title ?? '';
+  const content = input.drop?.content ?? input.content;
+  const locationName = input.drop?.locationName ?? input.locationName;
+  const specs = input.drop?.specs ?? input.specs;
+  const palette = input.drop?.palette ?? input.palette;
+  const media = input.drop?.media ?? input.media ?? [];
+
+  // 2. Validate Drop fields
+  if (!title || title.trim().length < 2) {
     return { success: false, error: 'Drop title must be at least 2 characters long.' };
   }
 
-  if (input.title.trim().length > 150) {
+  if (title.trim().length > 150) {
     return { success: false, error: 'Drop title cannot exceed 150 characters.' };
   }
 
-  if (!input.spaceId) {
-    return { success: false, error: 'A destination Space must be selected.' };
-  }
-
-  const space = await prisma.space.findUnique({
-    where: { id: input.spaceId },
-  });
-
-  if (!space) {
-    return { success: false, error: 'The selected Space does not exist.' };
-  }
-
-  // 2. Validate media
-  if (!input.media || input.media.length === 0) {
+  if (!media || media.length === 0) {
     return { success: false, error: 'At least one visual asset (image) is required to publish a Drop.' };
   }
 
-  if (input.media.length > 10) {
+  if (media.length > 10) {
     return { success: false, error: 'A Drop can contain a maximum of 10 media items.' };
   }
 
-  for (const m of input.media) {
+  for (const m of media) {
     if (!m.url || !m.url.trim()) {
-      return { success: false, error: 'Invalid media URL provided.' };
+      return { success: false, error: 'Invalid media asset detected. Please wait for upload to complete.' };
     }
   }
 
-  try {
-    const drop = await prisma.$transaction(async (tx) => {
+  // 3. Validate Destination Space (Either existing spaceId OR valid newSpace payload)
+  if (!input.spaceId && !input.newSpace) {
+    return { success: false, error: 'A destination Space must be selected or created.' };
+  }
+
+  if (input.newSpace) {
+    const trimmedName = input.newSpace.name?.trim() || '';
+    if (trimmedName.length < 2 || trimmedName.length > 60) {
+      return { success: false, error: 'Space name must be between 2 and 60 characters.' };
+    }
+
+    const trimmedDesc = input.newSpace.description?.trim() || '';
+    if (trimmedDesc.length < 10 || trimmedDesc.length > 500) {
+      return { success: false, error: 'Space description must be between 10 and 500 characters.' };
+    }
+
+    const trimmedCategory = input.newSpace.category?.trim() || '';
+    if (trimmedCategory.length < 2) {
+      return { success: false, error: 'Please specify a category for the new Space.' };
+    }
+  }
+
+  const newSpaceInput = input.newSpace;
+
+  // Single transaction body. For a new Space the slug is supplied by the unique-slug allocator.
+  const runTx = (newSlug?: string) =>
+    prisma.$transaction(async (tx) => {
+      let targetSpaceId: string;
+      let targetSpaceSlug: string;
+      let targetSpaceName: string;
+
+      if (newSpaceInput && newSlug) {
+        const coverUrl =
+          newSpaceInput.coverImageUrl?.trim() ||
+          media[0]?.url?.trim() ||
+          'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&q=80';
+
+        const createdSpace = await insertSpaceWithCreator(
+          tx,
+          user.id,
+          {
+            name: newSpaceInput.name,
+            description: newSpaceInput.description,
+            category: newSpaceInput.category,
+            coverImageUrl: coverUrl,
+            themeColor: newSpaceInput.themeColor,
+            guidelines: newSpaceInput.guidelines,
+          },
+          newSlug
+        );
+
+        targetSpaceId = createdSpace.id;
+        targetSpaceSlug = createdSpace.slug;
+        targetSpaceName = createdSpace.name;
+      } else {
+        // Existing Space: identified strictly by ID, never by display name.
+        const space = await tx.space.findUnique({
+          where: { id: input.spaceId },
+        });
+
+        if (!space) {
+          throw new Error('The selected Space does not exist.');
+        }
+
+        targetSpaceId = space.id;
+        targetSpaceSlug = space.slug;
+        targetSpaceName = space.name;
+      }
+
       const createdDrop = await tx.drop.create({
         data: {
-          spaceId: space.id,
+          spaceId: targetSpaceId,
           userId: user.id,
-          title: input.title.trim(),
-          content: input.content?.trim() || null,
-          locationName: input.locationName?.trim() || null,
-          specs: input.specs && Object.keys(input.specs).length > 0 ? JSON.stringify(input.specs) : null,
-          palette: input.palette && input.palette.length > 0 ? JSON.stringify(input.palette) : '[]',
+          title: title.trim(),
+          content: content?.trim() || null,
+          locationName: locationName?.trim() || null,
+          specs: specs && Object.keys(specs).length > 0 ? JSON.stringify(specs) : null,
+          palette: palette && palette.length > 0 ? JSON.stringify(palette) : '[]',
           media: {
-            create: input.media.map((m, idx) => ({
+            create: media.map((m, idx) => ({
               url: m.url.trim(),
               width: Math.max(1, Math.round(m.width || 1200)),
               height: Math.max(1, Math.round(m.height || 800)),
@@ -98,27 +183,47 @@ export async function createDrop(input: CreateDropInput): Promise<CreateDropResu
         },
       });
 
-      // Increment space count
+      // Increment space drop count atomically
       await tx.space.update({
-        where: { id: space.id },
+        where: { id: targetSpaceId },
         data: { dropsCount: { increment: 1 } },
       });
 
-      return createdDrop;
+      return {
+        dropId: createdDrop.id,
+        spaceSlug: targetSpaceSlug,
+        spaceId: targetSpaceId,
+        spaceName: targetSpaceName,
+      };
     });
+
+  try {
+    const result = newSpaceInput
+      ? await withUniqueSlug(buildBaseSlug(newSpaceInput.slug || newSpaceInput.name), (slug) =>
+          runTx(slug)
+        )
+      : await runTx();
 
     try {
       revalidatePath('/');
       revalidatePath('/explore');
-      revalidatePath(`/s/${space.slug}`);
+      revalidatePath('/create');
+      revalidatePath(`/s/${result.spaceSlug}`);
     } catch {
-      // Safe fallback when executed outside of an active HTTP request scope (e.g. testing)
+      // Safe fallback when executed outside active HTTP request scope
     }
 
-    return { success: true, dropId: drop.id, spaceSlug: space.slug };
-  } catch (error) {
-    console.error('Failed to create Drop:', error);
-    return { success: false, error: 'Failed to publish Drop. Please try again.' };
+    return {
+      success: true,
+      dropId: result.dropId,
+      spaceSlug: result.spaceSlug,
+      spaceId: result.spaceId,
+      spaceName: result.spaceName,
+    };
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[createDrop] Failed to publish Drop:', errorMsg);
+    return { success: false, error: errorMsg || 'Failed to publish Drop. Please try again.' };
   }
 }
 
