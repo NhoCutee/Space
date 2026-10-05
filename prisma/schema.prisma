@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -37,10 +37,12 @@ model Space {
   guidelines     String?
   membersCount   Int           @default(1)
   dropsCount     Int           @default(0)
+  commentsCount  Int           @default(0)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @default(now()) @updatedAt
   members        SpaceMember[]
   drops          Drop[]
+  comments       Comment[]
   notifications  Notification[]
 }
 
@@ -81,15 +83,21 @@ model Drop {
 }
 
 model DropMedia {
-  id          String   @id @default(uuid())
-  dropId      String
-  url         String
-  width       Int      @default(1200)
-  height      Int      @default(800)
-  aspectRatio Float    @default(1.5)
-  blurhash    String?
-  sortOrder   Int      @default(0)
-  drop        Drop     @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  dropId       String?
+  url          String   @default("")
+  status       String   @default("PENDING") // PENDING, PROCESSING, READY, FAILED
+  publicId     String?
+  variants     String?  // JSON string: { large, medium, small, thumbnail, localThumbnail }
+  errorMessage String?
+  width        Int      @default(1200)
+  height       Int      @default(800)
+  aspectRatio  Float    @default(1.5)
+  blurhash     String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  drop         Drop?    @relation(fields: [dropId], references: [id], onDelete: Cascade)
 }
 
 model Reaction {
@@ -106,16 +114,21 @@ model Reaction {
 
 model Comment {
   id        String    @id @default(uuid())
-  dropId    String
+  spaceId   String?
+  dropId    String?
   userId    String
   parentId  String?
   content   String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
-  drop      Drop      @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  space     Space?    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  drop      Drop?     @relation(fields: [dropId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent    Comment?  @relation("ThreadedComments", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("ThreadedComments")
+
+  @@index([spaceId, parentId, createdAt])
+  @@index([dropId, parentId, createdAt])
 }
 
 model Collection {
