@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T08:18:00.000Z",
+  "title": "Design System: Spaces",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Obsidian Ink",
+        "canonical": "#18181b",
+        "tonalRamp": ["#09090b", "#18181b", "#27272a", "#3f3f46", "#71717a", "#a1a1aa", "#e4e4e7", "#fafafa"]
+      },
+      "primary-foreground": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#fafafa",
+        "tonalRamp": ["#18181b", "#27272a", "#52525b", "#a1a1aa", "#d4d4d8", "#e4e4e7", "#f4f4f5", "#ffffff"]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Porcelain Canvas",
+        "canonical": "#fafafa",
+        "tonalRamp": ["#18181b", "#27272a", "#52525b", "#a1a1aa", "#d4d4d8", "#e4e4e7", "#f4f4f5", "#fafafa"]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Deep Charcoal Ink",
+        "canonical": "#09090b",
+        "tonalRamp": ["#09090b", "#18181b", "#27272a", "#52525b", "#71717a", "#a1a1aa", "#d4d4d8", "#fafafa"]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Atelier Surface",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#121215", "#1c1c20", "#27272a", "#52525b", "#a1a1aa", "#e4e4e7", "#f4f4f5", "#ffffff"]
+      },
+      "secondary": {
+        "role": "neutral",
+        "displayName": "Quiet Slate",
+        "canonical": "#f4f4f5",
+        "tonalRamp": ["#18181b", "#27272a", "#3f3f46", "#71717a", "#a1a1aa", "#d4d4d8", "#e4e4e7", "#f4f4f5"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Subtle Gray",
+        "canonical": "#f4f4f5",
+        "tonalRamp": ["#18181b", "#27272a", "#3f3f46", "#71717a", "#a1a1aa", "#d4d4d8", "#e4e4e7", "#f4f4f5"]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Stone Caption",
+        "canonical": "#71717a",
+        "tonalRamp": ["#18181b", "#27272a", "#3f3f46", "#52525b", "#71717a", "#a1a1aa", "#d4d4d8", "#f4f4f5"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline Border",
+        "canonical": "#e4e4e7",
+        "tonalRamp": ["#18181b", "#27272a", "#3f3f46", "#52525b", "#71717a", "#a1a1aa", "#d4d4d8", "#e4e4e7"]
+      },
+      "accent-indigo": {
+        "role": "primary",
+        "displayName": "Aesthetic Indigo",
+        "canonical": "#6366f1",
+        "tonalRamp": ["#1e1b4b", "#312e81", "#3730a3", "#4338ca", "#4f46e5", "#6366f1", "#818cf8", "#c7d2fe"]
+      },
+      "accent-emerald": {
+        "role": "secondary",
+        "displayName": "Communal Emerald",
+        "canonical": "#10b981",
+        "tonalRamp": ["#022c22", "#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0"]
+      },
+      "accent-amber": {
+        "role": "tertiary",
+        "displayName": "Velocity Amber",
+        "canonical": "#f59e0b",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a"]
+      },
+      "accent-rose": {
+        "role": "tertiary",
+        "displayName": "Resonance Rose",
+        "canonical": "#ef4444",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display Black",
+        "purpose": "Landing hero mastheads and primary section titles."
+      },
+      "headline": {
+        "displayName": "Headline Extrabold",
+        "purpose": "Major card titles and dialog headers."
+      },
+      "title": {
+        "displayName": "Title Bold",
+        "purpose": "Component section headings and space titles."
+      },
+      "body": {
+        "displayName": "Body Regular",
+        "purpose": "Descriptions, commentary, and creator notes."
+      },
+      "label": {
+        "displayName": "Label Semibold",
+        "purpose": "Capsule tags, buttons, badges, and micro-metrics."
+      }
+    },
+    "shadows": [
+      {
+        "name": "none",
+        "value": "none",
+        "purpose": "Flat-by-default rest state."
+      },
+      {
+        "name": "hover-lift",
+        "value": "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
+        "purpose": "Subtle card lift on mouse hover."
+      },
+      {
+        "name": "elevated-modal",
+        "value": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        "purpose": "Floating command palette and dialogs."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-micro",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Smooth tactile micro-transitions (scale, transform)."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Dialog zoom-in and button click presses."
+      },
+      {
+        "name": "duration-smooth",
+        "value": "300ms",
+        "purpose": "Card hover lifts and image zoom animations."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "High-contrast action capsule used for joining spaces and primary actions.",
+      "html": "<button class=\"ds-btn-primary\"><svg class=\"ds-btn-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"></line><line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"></line></svg><span>Join Space</span></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 16px; border-radius: 9999px; background: #18181b; color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 600; border: none; cursor: pointer; transition: opacity 0.15s, transform 0.15s; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:active { transform: scale(0.95); } .ds-btn-icon { width: 14px; height: 14px; }"
+    },
+    {
+      "name": "Joined Toggle Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary capsule button indicating active membership with leave-intent hover state.",
+      "html": "<button class=\"ds-btn-joined\"><svg class=\"ds-btn-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"2.5\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg><span>Joined</span></button>",
+      "css": ".ds-btn-joined { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 16px; border-radius: 9999px; background: #f4f4f5; color: #18181b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 600; border: 1px solid #e4e4e7; cursor: pointer; transition: all 0.2s ease; } .ds-btn-joined:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); } .ds-btn-joined:active { transform: scale(0.95); } .ds-btn-check { width: 14px; height: 14px; }"
+    },
+    {
+      "name": "Explainable Recommendation Badge",
+      "kind": "chip",
+      "refersTo": "badge-explainable",
+      "description": "Transparent recommendation pill surfacing why an item is recommended.",
+      "html": "<div class=\"ds-badge-interest\"><svg class=\"ds-badge-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"2\"><path d=\"m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z\"></path></svg><span>Phù hợp sở thích</span></div>",
+      "css": ".ds-badge-interest { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 9999px; background: rgba(99, 102, 241, 0.1); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.3); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 500; } .ds-badge-icon { width: 12px; height: 12px; shrink: 0; }"
+    },
+    {
+      "name": "Segmented Filter Control",
+      "kind": "chip",
+      "refersTo": "chip-filter",
+      "description": "Tactile segmented toggle container with sliding active state.",
+      "html": "<div class=\"ds-seg-control\"><button class=\"ds-seg-btn active\">Tất cả gợi ý</button><button class=\"ds-seg-btn\">Đã tham gia (4)</button></div>",
+      "css": ".ds-seg-control { display: inline-flex; align-items: center; padding: 4px; border-radius: 12px; background: rgba(244, 244, 245, 0.8); border: 1px solid #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .ds-seg-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; border: none; background: transparent; color: #71717a; cursor: pointer; transition: all 0.15s ease; } .ds-seg-btn.active { background: #ffffff; color: #09090b; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); font-weight: 600; } .ds-seg-btn:hover:not(.active) { color: #09090b; }"
+    },
+    {
+      "name": "Space Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Architectural card container displaying Space cover artwork, category badge, and metadata.",
+      "html": "<div class=\"ds-space-card\"><div class=\"ds-space-media\"><div class=\"ds-space-category\">Architecture</div></div><div class=\"ds-space-body\"><div class=\"ds-space-title\">Minimalist Concrete</div><div class=\"ds-space-desc\">Explorations into brutalist texture, natural daylighting, and spatial geometry.</div></div></div>",
+      "css": ".ds-space-card { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: #ffffff; border: 1px solid #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); } .ds-space-card:hover { border-color: rgba(9, 9, 11, 0.3); transform: translateY(-4px); box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.08); } .ds-space-media { position: relative; aspect-ratio: 16/9; background: #f4f4f5; } .ds-space-category { position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 9999px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); border: 1px solid #e4e4e7; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #09090b; } .ds-space-body { padding: 16px; } .ds-space-title { font-size: 16px; font-weight: 700; color: #09090b; line-height: 1.3; } .ds-space-desc { font-size: 12px; color: #71717a; margin-top: 6px; line-height: 1.5; }"
+    },
+    {
+      "name": "Command Palette Trigger Bar",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Universal search input bar trigger with shortcut pill indicator.",
+      "html": "<div class=\"ds-search-bar\"><svg class=\"ds-search-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#71717a\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"></line></svg><span class=\"ds-search-placeholder\">Search spaces, topics, aesthetics...</span><kbd class=\"ds-search-kbd\">⌘K</kbd></div>",
+      "css": ".ds-search-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-radius: 9999px; background: rgba(244, 244, 245, 0.5); border: 1px solid #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: all 0.2s ease; } .ds-search-bar:hover { background: #f4f4f5; border-color: #d4d4d8; } .ds-search-icon { width: 14px; height: 14px; margin-right: 10px; shrink: 0; } .ds-search-placeholder { font-size: 12px; color: #71717a; flex: 1; } .ds-search-kbd { padding: 2px 6px; border-radius: 6px; background: #ffffff; border: 1px solid #e4e4e7; font-family: monospace; font-size: 10px; font-weight: 600; color: #71717a; }"
+    },
+    {
+      "name": "Navigation Link Pill",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Pill-style top navigation link item with active state highlight.",
+      "html": "<a class=\"ds-nav-pill active\"><svg class=\"ds-nav-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg><span>Feed</span></a>",
+      "css": ".ds-nav-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 9999px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 600; text-decoration: none; color: #71717a; transition: all 0.15s ease; cursor: pointer; } .ds-nav-pill:hover { color: #09090b; background: rgba(244, 244, 245, 0.8); } .ds-nav-pill.active { background: #18181b; color: #fafafa; } .ds-nav-icon { width: 14px; height: 14px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Visual Commons Atelier",
+    "overview": "Spaces is a distraction-free digital gallery and aesthetic commons engineered to celebrate original visual craft, photography, architecture, and design disciplines. Departing from the cluttered dopamine architecture of mainstream social feeds, the interface functions as an unobtrusive atelier: muted, architectural hairline frames recede completely into the background, leaving the uploaded media to command 100% of the viewer's emotional and visual focus.\n\nThe visual tone is defined by quiet editorial restraint, tactile hairline borders, and generous breathing room. High-contrast typography pairs with micro-radius pill geometry to provide immediate legibility while maintaining a calm, disciplined gallery rhythm. Light mode adopts a porcelain paper canvas (#fafafa) with deep charcoal ink typography (#18181b), while Dark mode shifts into an inkwell sanctuary (#09090b / #121215) where image highlights luminous aesthetics without backlight glare.\n\nConfirmed visual anti-references: no saturated neon drop shadows, no intrusive advertising widgets, no autoplay video clutter, no aggressive gamification badges or confetti animations, and no thick heavy dividers.",
+    "keyCharacteristics": [
+      "Artwork-First Neutrality: Surfaces remain strictly achromatic neutral so vibrant photographs and artworks maintain chromatic primacy.",
+      "Hairline Tactility: 1px borders (border-border/80) deliver crisp architectural definition without heavy elevation drops.",
+      "Micro-Scale Pill Affordances: Action pills, category badges, and explainable indicators adopt full capsule geometry (rounded-full) for friendly, thumb-optimized touch targets.",
+      "Explainable Semantics: Contextual cues (interests, joined spaces, trending) employ intentional pastel tint coding rather than noisy saturated banners."
+    ],
+    "rules": [
+      {
+        "name": "The Artwork Supremacy Rule",
+        "body": "Accent colors are forbidden from occupying more than 5% of any content viewport. The vibrant color space belongs solely to user-contributed media; UI chromas serve only navigation and semantic status.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ghost Border Fallback Rule",
+        "body": "When a card or media container sits on an identically colored surface, separation must be achieved through a 1px border (border-border/70), never through artificial drop-shadow dropoffs.",
+        "section": "colors"
+      },
+      {
+        "name": "The Zero Font Shift Rule",
+        "body": "System sans-serif stacks eliminate webfont flicker and layout shifts (CLS = 0), ensuring that visual browsing begins immediately upon initial packet arrival.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tight Header Tracking Rule",
+        "body": "Large headings (text-xl and above) must use negative letter spacing (tracking-tight / -0.025em) to preserve typographic density and prevent headline sprawl.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces possess zero drop-shadow at rest. Shadows appear strictly as interactive affordances (hover state) or modal depth layers.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Hairline Boundary Rule",
+        "body": "All visual separation between adjacent functional surfaces must be achieved with a 1px border at 60%–80% opacity, never heavy gradients or drop shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do preserve the natural aspect ratio of user drops in masonry canvas feeds (aspectRatio inline styling).",
+      "Do use hairline borders (border border-border/80) for structural definition between adjacent card elements.",
+      "Do maintain strict achromatic neutrality across navigation and structural cards to honor user artwork.",
+      "Do use ExplainableBadge on every algorithmically recommended space and drop to explain why it appears.",
+      "Do provide smooth micro-interactions (active:scale-95, transition-all duration-200) on touch targets."
+    ],
+    "donts": [
+      "Don't apply heavy, saturated drop-shadows under cards at rest.",
+      "Don't use decorative primary color fills on large card backgrounds.",
+      "Don't introduce external web fonts that cause layout shift or delay initial visual presentation.",
+      "Don't crop user artworks into arbitrary circular or distorted aspect ratios without user consent.",
+      "Don't hide recommendation rationale behind opaque algorithm feeds."
+    ]
+  }
+}
