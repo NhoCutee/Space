@@ -2,221 +2,352 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X, Compass, Users, Sparkles, ArrowRight } from 'lucide-react';
-import { getSpaces } from '@/actions/spaces';
+import {
+  Search,
+  X,
+  Compass,
+  ArrowRight,
+  Loader2,
+  Image as ImageIcon,
+  User as UserIcon,
+  Tag,
+  CornerDownLeft,
+} from 'lucide-react';
+import { searchAll, UnifiedSearchResults } from '@/actions/search';
 
 interface SearchDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface SpaceResult {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  category: string;
-  coverImageUrl: string;
-  membersCount: number;
-}
+type SearchCategoryTab = 'all' | 'spaces' | 'drops' | 'users' | 'topics';
 
 export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
   const [query, setQuery] = useState('');
-  const [spaces, setSpaces] = useState<SpaceResult[]>([]);
+  const [results, setResults] = useState<UnifiedSearchResults>({
+    spaces: [],
+    drops: [],
+    users: [],
+    topics: [],
+    totalResults: 0,
+  });
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<SearchCategoryTab>('all');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Load spaces on mount or when opening
+  // Load initial popular results or search query with debounce
   useEffect(() => {
-    if (isOpen) {
-      setLoading(true);
-      getSpaces()
+    if (!isOpen) {
+      setQuery('');
+      setSelectedIndex(0);
+      return;
+    }
+
+    setLoading(true);
+    const timeoutId = setTimeout(() => {
+      searchAll(query)
         .then((res) => {
-          setSpaces(
-            res.map((s) => ({
-              id: s.id,
-              slug: s.slug,
-              name: s.name,
-              description: s.description,
-              category: s.category,
-              coverImageUrl: s.coverImageUrl,
-              membersCount: s.membersCount,
-            }))
-          );
+          setResults(res);
+          setSelectedIndex(0);
+        })
+        .catch((err) => {
+          console.error('Search error:', err);
         })
         .finally(() => {
           setLoading(false);
-          setTimeout(() => {
-            inputRef.current?.focus();
-          }, 50);
         });
-    } else {
-      setQuery('');
+    }, query ? 150 : 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, query]);
+
+  // Focus input on open
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
     }
   }, [isOpen]);
 
-  // Handle escape key
+  // Flatten active items for keyboard navigation
+  const visibleItems = (() => {
+    const items: Array<{
+      type: 'space' | 'drop' | 'user' | 'topic';
+      id: string;
+      title: string;
+      subtitle: string;
+      url: string;
+      image?: string | null;
+    }> = [];
+
+    if (activeTab === 'all' || activeTab === 'spaces') {
+      results.spaces.forEach((s) => {
+        items.push({
+          type: 'space',
+          id: `space-${s.id}`,
+          title: s.name,
+          subtitle: `${s.category} • ${s.membersCount} thành viên`,
+          url: `/s/${s.slug}`,
+          image: s.coverImageUrl,
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'drops') {
+      results.drops.forEach((d) => {
+        items.push({
+          type: 'drop',
+          id: `drop-${d.id}`,
+          title: d.title,
+          subtitle: `trong ${d.spaceName} • bởi ${d.authorName}`,
+          url: `/drop/${d.id}`,
+          image: d.mediaUrl,
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'users') {
+      results.users.forEach((u) => {
+        items.push({
+          type: 'user',
+          id: `user-${u.id}`,
+          title: u.displayName,
+          subtitle: `@${u.username}${u.bio ? ` • ${u.bio}` : ''}`,
+          url: `/explore?q=${encodeURIComponent(u.username)}`,
+          image: u.avatarUrl,
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'topics') {
+      results.topics.forEach((t) => {
+        items.push({
+          type: 'topic',
+          id: `topic-${t.tag}`,
+          title: `#${t.tag}`,
+          subtitle: `${t.category} • ${t.count} không gian`,
+          url: `/explore?category=${encodeURIComponent(t.tag)}`,
+        });
+      });
+    }
+
+    return items;
+  })();
+
+  // Handle keyboard navigation: ArrowUp, ArrowDown, Enter, Esc
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
         onClose();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1 < visibleItems.length ? prev + 1 : 0));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : visibleItems.length - 1));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const selected = visibleItems[selectedIndex];
+        if (selected) {
+          onClose();
+          router.push(selected.url);
+        } else if (query.trim()) {
+          onClose();
+          router.push(`/explore?q=${encodeURIComponent(query.trim())}`);
+        }
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, visibleItems, selectedIndex, query, onClose, router]);
 
   if (!isOpen) return null;
 
-  // Filter spaces based on query
-  const filteredSpaces = query.trim()
-    ? spaces.filter(
-        (s) =>
-          s.name.toLowerCase().includes(query.toLowerCase()) ||
-          s.description.toLowerCase().includes(query.toLowerCase()) ||
-          s.category.toLowerCase().includes(query.toLowerCase())
-      )
-    : spaces.slice(0, 5); // default show top 5 spaces
-
-  const handleSelectSpace = (slug: string) => {
+  const handleSelectItem = (url: string) => {
     onClose();
-    router.push(`/s/${slug}`);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      onClose();
-      router.push(`/explore?q=${encodeURIComponent(query.trim())}`);
-    }
+    router.push(url);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 px-3 sm:px-4 bg-background/80 dark:bg-black/70 backdrop-blur-md animate-in fade-in duration-150">
       <div
         className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-xl rounded-3xl border border-border/80 bg-card p-4 shadow-2xl z-10 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl rounded-3xl border border-border/80 bg-card shadow-2xl overflow-hidden z-10 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
         {/* Search Input Bar */}
-        <form onSubmit={handleSubmit} className="relative flex items-center mb-3">
-          <Search className="absolute left-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <div className="p-4 sm:p-5 border-b border-border/60 flex items-center gap-3">
+          <Search className="w-5 h-5 text-muted-foreground shrink-0" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search spaces by topic, craft, or aesthetic..."
-            className="w-full pl-10 pr-10 py-3 rounded-2xl border border-border/80 bg-secondary/50 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20 transition-all"
+            placeholder="Tìm Không gian, bài Drop, nghệ sĩ, chủ đề... (⌘K)"
+            className="flex-1 bg-transparent text-sm sm:text-base font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
-          {query ? (
+          {loading ? (
+            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
+          ) : query ? (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="absolute right-3 p-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
+              className="p-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           ) : (
-            <kbd className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-background border border-border rounded">
+            <kbd className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono font-semibold text-muted-foreground bg-secondary rounded-lg border border-border/60">
               ESC
             </kbd>
           )}
-        </form>
+        </div>
 
-        {/* Results List */}
-        <div className="max-h-80 overflow-y-auto space-y-1.5 pr-1">
-          <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
-            <span>{query ? 'Matching Spaces' : 'Suggested Spaces'}</span>
-            {query && (
-              <span className="text-[10px] font-normal lowercase">
-                press enter to search all
-              </span>
-            )}
-          </div>
+        {/* Category Pills Bar */}
+        <div className="px-4 py-2 bg-secondary/30 border-b border-border/50 flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
+          {(
+            [
+              { id: 'all', label: 'Tất cả' },
+              { id: 'spaces', label: `Không gian (${results.spaces.length})` },
+              { id: 'drops', label: `Drops (${results.drops.length})` },
+              { id: 'users', label: `Nghệ sĩ (${results.users.length})` },
+              { id: 'topics', label: `Chủ đề (${results.topics.length})` },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSelectedIndex(0);
+              }}
+              className={`px-3 py-1 rounded-full font-medium transition-colors cursor-pointer shrink-0 ${
+                activeTab === tab.id
+                  ? 'bg-foreground text-background font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {filteredSpaces.length > 0 ? (
-            filteredSpaces.map((space) => (
-              <button
-                key={space.id}
-                onClick={() => handleSelectSpace(space.slug)}
-                className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-secondary/80 text-left transition-all group cursor-pointer"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-muted shrink-0">
-                    <img
-                      src={space.coverImageUrl}
-                      alt={space.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                        {space.name}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground uppercase tracking-wider font-semibold">
-                        {space.category}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                      {space.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 ml-3">
-                  <div className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Users className="w-3 h-3" />
-                    <span>{space.membersCount}</span>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 group-hover:text-foreground transition-all" />
-                </div>
-              </button>
-            ))
-          ) : (
-            <div className="py-8 text-center text-xs text-muted-foreground">
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <Sparkles className="w-4 h-4 animate-spin text-amber-500" />
-                  <span>Loading spaces...</span>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p>No spaces match &quot;{query}&quot;</p>
-                  <button
-                    onClick={handleSubmit}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity"
-                  >
-                    <span>Search on Explore directory</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
+        {/* Results Body */}
+        <div className="flex-1 overflow-y-auto p-2 sm:p-3 divide-y divide-border/30">
+          {visibleItems.length === 0 ? (
+            <div className="py-12 text-center space-y-2">
+              <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center mx-auto text-muted-foreground">
+                <Search className="w-5 h-5" />
+              </div>
+              <p className="text-xs font-semibold text-foreground">
+                {query ? `Không tìm thấy kết quả cho "${query}"` : 'Nhập từ khóa để tìm kiếm'}
+              </p>
+              <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                Thử tìm theo tên quán cà phê, bàn phím cơ, phong cách đường phố hoặc địa danh.
+              </p>
             </div>
+          ) : (
+            visibleItems.map((item, index) => {
+              const isSelected = selectedIndex === index;
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => handleSelectItem(item.url)}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  className={`p-3 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    isSelected
+                      ? 'bg-secondary/80 text-foreground ring-1 ring-border/80'
+                      : 'hover:bg-secondary/40 text-muted-foreground'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="w-10 h-10 rounded-xl object-cover ring-1 ring-border/50 shrink-0"
+                      />
+                    ) : item.type === 'space' ? (
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                        <Compass className="w-5 h-5" />
+                      </div>
+                    ) : item.type === 'drop' ? (
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                        <ImageIcon className="w-5 h-5" />
+                      </div>
+                    ) : item.type === 'user' ? (
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                        <UserIcon className="w-5 h-5" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
+                        <Tag className="w-5 h-5" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-foreground truncate flex items-center gap-1.5">
+                        <span>{item.title}</span>
+                        <span className="text-[10px] font-normal uppercase tracking-wider px-1.5 py-0.2 rounded-md bg-secondary text-muted-foreground shrink-0">
+                          {item.type}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {item.subtitle}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0 text-muted-foreground">
+                    {isSelected && (
+                      <div className="hidden sm:flex items-center gap-1 text-[10px] font-mono text-zinc-400">
+                        <span>Chọn</span>
+                        <CornerDownLeft className="w-3 h-3" />
+                      </div>
+                    )}
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
 
         {/* Footer shortcuts */}
-        <div className="mt-3 pt-3 border-t border-border/50 px-2 flex items-center justify-between text-[11px] text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-indigo-400" />
-            <button
-              onClick={() => {
-                onClose();
-                router.push('/explore');
-              }}
-              className="hover:text-foreground transition-colors cursor-pointer"
-            >
-              Browse all categories
-            </button>
+        <div className="p-3 bg-secondary/20 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline">
+              <kbd className="font-mono bg-secondary px-1.5 py-0.5 rounded border border-border/50">↑</kbd>{' '}
+              <kbd className="font-mono bg-secondary px-1.5 py-0.5 rounded border border-border/50">↓</kbd> để di chuyển
+            </span>
+            <span className="hidden sm:inline">
+              <kbd className="font-mono bg-secondary px-1.5 py-0.5 rounded border border-border/50">↵</kbd> để mở
+            </span>
           </div>
-          <span className="text-[10px]">
-            Tip: Press <kbd className="px-1 py-0.5 bg-secondary rounded border border-border">↵ Enter</kbd> to explore
-          </span>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (query.trim()) {
+                onClose();
+                router.push(`/explore?q=${encodeURIComponent(query.trim())}`);
+              }
+            }}
+            className="text-xs font-semibold text-foreground hover:underline ml-auto flex items-center gap-1"
+          >
+            <span>Tìm kiếm đầy đủ</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
       </div>
     </div>
