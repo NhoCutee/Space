@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { slugify } from '@/lib/utils';
+import { buildBaseSlug, withUniqueSlug, insertSpaceWithCreator } from '@/lib/spaces/slug';
 
 export interface SpaceActionResult {
   success: boolean;
@@ -253,6 +253,32 @@ export async function leaveSpace(spaceId: string): Promise<SpaceActionResult> {
 }
 
 /**
+ * Convenience toggle action to join or leave a Space.
+ */
+export async function toggleSpaceMembership(spaceId: string): Promise<SpaceActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, isJoined: false, membersCount: 0, error: 'Authentication required' };
+  }
+
+  const existing = await prisma.spaceMember.findUnique({
+    where: {
+      spaceId_userId: {
+        spaceId,
+        userId: user.id,
+      },
+    },
+  });
+
+  if (existing) {
+    return leaveSpace(spaceId);
+  } else {
+    return joinSpace(spaceId);
+  }
+}
+
+
+/**
  * 1-click toggle helper for buttons.
  */
 export async function toggleJoinSpace(spaceId: string): Promise<SpaceActionResult> {
@@ -293,6 +319,8 @@ export interface CreateSpaceResult {
     id: string;
     slug: string;
     name: string;
+    category?: string;
+    coverImageUrl?: string;
   };
   error?: string;
 }
@@ -327,45 +355,27 @@ export async function createSpace(input: CreateSpaceInput): Promise<CreateSpaceR
     return { success: false, error: 'Cover image is required' };
   }
 
-  // 2. Slug generation & Collision resolution
-  let baseSlug = input.slug ? slugify(input.slug) : slugify(trimmedName);
-  if (!baseSlug || baseSlug.length < 2) {
-    baseSlug = `space-${Date.now().toString(36)}`;
-  }
-
-  let finalSlug = baseSlug;
-  let counter = 1;
-  while (await prisma.space.findUnique({ where: { slug: finalSlug } })) {
-    finalSlug = `${baseSlug}-${counter}`;
-    counter++;
-  }
+  // 2. Slug generation: display names may repeat, slug is the unique identifier.
+  const baseSlug = buildBaseSlug(input.slug || trimmedName);
 
   try {
-    const createdSpace = await prisma.$transaction(async (tx) => {
-      const space = await tx.space.create({
-        data: {
-          slug: finalSlug,
-          name: trimmedName,
-          description: trimmedDesc,
-          category: trimmedCategory,
-          coverImageUrl: trimmedCover,
-          themeColor: input.themeColor?.trim() || '#18181b',
-          guidelines: input.guidelines?.trim() || null,
-          membersCount: 1,
-          dropsCount: 0,
-        },
-      });
-
-      await tx.spaceMember.create({
-        data: {
-          spaceId: space.id,
-          userId: user.id,
-          role: 'CREATOR',
-        },
-      });
-
-      return space;
-    });
+    const createdSpace = await withUniqueSlug(baseSlug, (slug) =>
+      prisma.$transaction((tx) =>
+        insertSpaceWithCreator(
+          tx,
+          user.id,
+          {
+            name: trimmedName,
+            description: trimmedDesc,
+            category: trimmedCategory,
+            coverImageUrl: trimmedCover,
+            themeColor: input.themeColor,
+            guidelines: input.guidelines,
+          },
+          slug
+        )
+      )
+    );
 
     // Revalidate paths so the new space is reflected immediately
     try {
@@ -383,6 +393,8 @@ export async function createSpace(input: CreateSpaceInput): Promise<CreateSpaceR
         id: createdSpace.id,
         slug: createdSpace.slug,
         name: createdSpace.name,
+        category: createdSpace.category,
+        coverImageUrl: createdSpace.coverImageUrl,
       },
     };
   } catch (err: unknown) {

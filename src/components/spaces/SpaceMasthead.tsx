@@ -143,7 +143,7 @@ export function SpaceMasthead({ space, initialJoined, userRole }: SpaceMastheadP
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <Link
-            href={`/drop/new?space=${space.slug}`}
+            href={`/create?space=${space.slug}`}
             className="px-4 py-2.5 rounded-full text-sm font-semibold bg-foreground text-background hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />

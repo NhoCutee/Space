@@ -2,13 +2,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreateSpaceForm } from './CreateSpaceForm';
+import { CreateSpaceForm, CreatedSpaceData } from './CreateSpaceForm';
 import { X, Sparkles } from 'lucide-react';
 
 interface CreateSpaceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSpaceCreated?: (slug: string) => void;
+  onSpaceCreated?: (slug: string, space?: CreatedSpaceData) => void;
 }
 
 export function CreateSpaceModal({
@@ -43,10 +43,10 @@ export function CreateSpaceModal({
 
   if (!isOpen) return null;
 
-  const handleSuccess = (slug: string) => {
+  const handleSuccess = (slug: string, space?: CreatedSpaceData) => {
     onClose();
     if (onSpaceCreated) {
-      onSpaceCreated(slug);
+      onSpaceCreated(slug, space);
     } else {
       router.push(`/s/${slug}`);
     }
