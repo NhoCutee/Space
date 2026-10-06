@@ -334,26 +334,13 @@ export async function createSpace(input: CreateSpaceInput): Promise<CreateSpaceR
     return { success: false, error: 'Authentication required to create a Space' };
   }
 
-  // 1. Validation
-  const trimmedName = input.name?.trim() || '';
-  if (trimmedName.length < 2 || trimmedName.length > 60) {
-    return { success: false, error: 'Space name must be between 2 and 60 characters' };
+  // 1. Boundary Validation
+  const parsed = (await import('@/lib/security/validation')).SpaceInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input data' };
   }
 
-  const trimmedDesc = input.description?.trim() || '';
-  if (trimmedDesc.length < 10 || trimmedDesc.length > 500) {
-    return { success: false, error: 'Space description must be between 10 and 500 characters' };
-  }
-
-  const trimmedCategory = input.category?.trim() || '';
-  if (trimmedCategory.length < 2) {
-    return { success: false, error: 'Please specify a category' };
-  }
-
-  const trimmedCover = input.coverImageUrl?.trim() || '';
-  if (!trimmedCover) {
-    return { success: false, error: 'Cover image is required' };
-  }
+  const { name: trimmedName, description: trimmedDesc, category: trimmedCategory, coverImageUrl: trimmedCover } = parsed.data;
 
   // 2. Slug generation: display names may repeat, slug is the unique identifier.
   const baseSlug = buildBaseSlug(input.slug || trimmedName);
