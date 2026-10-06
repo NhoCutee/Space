@@ -15,8 +15,12 @@ model User {
   avatarUrl    String?
   bio          String?
   interests    String        @default("[]") // JSON string array of tags
+  passwordHash String?
+  role         String        @default("MEMBER") // MEMBER, MODERATOR, CREATOR, ADMIN
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  sessions     Session[]
+  accounts     Account[]
   memberships  SpaceMember[]
   drops        Drop[]
   reactions    Reaction[]
@@ -24,6 +28,35 @@ model User {
   collections  Collection[]
   notificationsReceived Notification[] @relation("RecipientUser")
   notificationsSent     Notification[] @relation("ActorUser")
+}
+
+model Session {
+  id                 String    @id @default(uuid())
+  userId             String
+  hashedRefreshToken String    @unique
+  userAgent          String?
+  ipAddress          String?
+  expiresAt          DateTime
+  createdAt          DateTime  @default(now())
+  lastUsedAt         DateTime  @default(now())
+  revokedAt          DateTime?
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([hashedRefreshToken])
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String   // "google", "github"
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Space {

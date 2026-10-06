@@ -17,12 +17,17 @@ async function main() {
   await prisma.space.deleteMany();
   await prisma.user.deleteMany();
 
+  // Pre-hashed bcrypt string for 'SpacesPassword2026!' (cost 12)
+  const defaultPasswordHash = '$2b$12$Nq9v7.E5u7YqV81u0.5g/Onv6V.sX3/g1iK7Cj4X3z1Jt.JzQdIeq';
+
   // 1. Create Users
   const maya = await prisma.user.create({
     data: {
       username: 'maya_curates',
       email: 'maya@spaces.network',
       displayName: 'Maya Lin',
+      passwordHash: defaultPasswordHash,
+      role: 'CREATOR',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       bio: 'Aesthetic curator, specialty coffee seeker & interior design enthusiast. Living between Hanoi & Kyoto.',
       interests: JSON.stringify(['Coffee', 'Interior', 'Photography', 'Travel']),
@@ -34,6 +39,8 @@ async function main() {
       username: 'kenji_shoots',
       email: 'kenji@spaces.network',
       displayName: 'Kenji Sato',
+      passwordHash: defaultPasswordHash,
+      role: 'CREATOR',
       avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
       bio: 'Street photographer & tech architect. Capturing neon nights and mechanical keyboard craftsmanship.',
       interests: JSON.stringify(['Photography', 'Streetwear', 'Tech', 'Keyboards']),
@@ -45,6 +52,8 @@ async function main() {
       username: 'elena_builds',
       email: 'elena@spaces.network',
       displayName: 'Elena Vance',
+      passwordHash: defaultPasswordHash,
+      role: 'CREATOR',
       avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
       bio: 'Workspace builder, minimal desk setups & creative coder. Obsessed with tactile switches & lighting.',
       interests: JSON.stringify(['Gaming', 'Keyboards', 'Interior', 'AI']),

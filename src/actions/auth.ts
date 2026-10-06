@@ -1,10 +1,32 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { setCurrentUser } from '@/lib/auth';
+import {
+  getCurrentUser,
+  setCurrentUser,
+  clearCurrentUser,
+  loginWithCredentials,
+  registerWithCredentials,
+  generatePKCE,
+  generateOAuthState,
+  getAuthorizationUrl,
+  OAuthProvider,
+  COOKIE_OAUTH_STATE,
+  COOKIE_OAUTH_VERIFIER,
+  getBaseCookieOptions,
+} from '@/lib/auth';
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
+/**
+ * Development-only persona switcher.
+ * STRICTLY disabled in production mode.
+ */
 export async function switchPersona(username: string) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Unauthorized: Persona switching is strictly prohibited in production.');
+  }
+
   const user = await prisma.user.findUnique({
     where: { username },
   });
@@ -16,30 +38,68 @@ export async function switchPersona(username: string) {
   return { success: true, user };
 }
 
-export async function registerUser(username: string, displayName: string, email: string, bio?: string) {
-  const cleanUsername = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
+/**
+ * Production login action with rate-limiting and validation.
+ */
+export async function loginAction(identifier: string, password: string) {
+  const result = await loginWithCredentials(identifier, password);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
 
-  const user = await prisma.user.create({
-    data: {
-      username: cleanUsername,
-      displayName,
-      email,
-      bio: bio || 'Visual explorer & Space contributor',
-      avatarUrl: `https://api.dicebear.com/7.x/shapes/svg?seed=${cleanUsername}`,
-      interests: JSON.stringify([]),
-    },
-  });
+/**
+ * Production registration action with password policy enforcement.
+ */
+export async function registerAction(params: {
+  username: string;
+  displayName: string;
+  email: string;
+  password: string;
+  bio?: string;
+}) {
+  const result = await registerWithCredentials(params);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
 
-  await setCurrentUser(user.id);
+/**
+ * Production logout action: revokes server-side session and wipes secure cookies.
+ */
+export async function logoutAction() {
+  await clearCurrentUser();
   revalidatePath('/');
-  return user;
+  return { success: true };
+}
+
+/**
+ * Generates OAuth2 authorization URL with PKCE and state cookies.
+ */
+export async function getOAuthUrlAction(provider: OAuthProvider) {
+  const cookieStore = await cookies();
+  const { codeVerifier, codeChallenge } = generatePKCE();
+  const state = generateOAuthState(provider);
+
+  const baseOptions = getBaseCookieOptions();
+  // 10 minutes lifetime for oauth handshakes
+  cookieStore.set(COOKIE_OAUTH_STATE, state, { ...baseOptions, maxAge: 600 });
+  cookieStore.set(COOKIE_OAUTH_VERIFIER, codeVerifier, { ...baseOptions, maxAge: 600 });
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const redirectUri = `${appUrl}/api/auth/callback/${provider}`;
+
+  const authUrl = getAuthorizationUrl(provider, redirectUri, state, codeChallenge);
+  return { success: true, authUrl };
 }
 
 export async function completeOnboarding(
   interests: string[],
   selectedSpaceIds?: string[]
 ): Promise<{ success: boolean; error?: string }> {
-  const cookieUser = await import('@/lib/auth').then((m) => m.getCurrentUser());
+  const cookieUser = await getCurrentUser();
   if (!cookieUser) {
     return { success: false, error: 'Bạn cần đăng nhập để hoàn tất thiết lập.' };
   }
@@ -107,4 +167,3 @@ export async function completeOnboarding(
     return { success: false, error: 'Lỗi khi lưu thông tin onboarding.' };
   }
 }
-
