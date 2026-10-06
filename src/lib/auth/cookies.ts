@@ -1,5 +1,3 @@
-import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
-
 export const COOKIE_ACCESS_TOKEN = 'spaces_access_token';
 export const COOKIE_REFRESH_TOKEN = 'spaces_refresh_token';
 export const COOKIE_OAUTH_STATE = 'spaces_oauth_state';
@@ -16,11 +14,16 @@ export function getBaseCookieOptions() {
   };
 }
 
+export interface CookieStoreWriter {
+  set(name: string, value: string, options?: Record<string, unknown>): void;
+  delete(name: string): void;
+}
+
 /**
  * Sets secure authentication cookies for access and refresh tokens.
  */
 export function setAuthCookies(
-  cookieStore: { set: (...args: any[]) => void },
+  cookieStore: CookieStoreWriter,
   accessToken: string,
   refreshToken: string
 ) {
@@ -40,10 +43,9 @@ export function setAuthCookies(
 /**
  * Clears all authentication cookies.
  */
-export function clearAuthCookies(cookieStore: { delete: (...args: any[]) => void }) {
-  const baseOptions = getBaseCookieOptions();
-  cookieStore.delete(COOKIE_ACCESS_TOKEN, baseOptions);
-  cookieStore.delete(COOKIE_REFRESH_TOKEN, baseOptions);
+export function clearAuthCookies(cookieStore: CookieStoreWriter) {
+  cookieStore.delete(COOKIE_ACCESS_TOKEN);
+  cookieStore.delete(COOKIE_REFRESH_TOKEN);
   // Also clear legacy cookie if present
-  cookieStore.delete('spaces_user_id', baseOptions);
+  cookieStore.delete('spaces_user_id');
 }

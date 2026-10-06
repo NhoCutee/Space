@@ -49,6 +49,7 @@ async function runPhase5Tests() {
     avatarUrl: testUser.avatarUrl,
     bio: testUser.bio,
     interests: [],
+    role: 'MEMBER',
   };
 
   // Test minimum interest validation logic directly

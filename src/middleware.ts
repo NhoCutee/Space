@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function middleware() {
   const response = NextResponse.next();
 
   // 1. Content Security Policy (CSP) tailored for Next.js, Cloudinary, DiceBear, and Unsplash

@@ -9,7 +9,6 @@ import {
   setAuthCookies,
   COOKIE_OAUTH_STATE,
   COOKIE_OAUTH_VERIFIER,
-  getBaseCookieOptions,
 } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -42,10 +41,9 @@ export async function GET(
   const storedState = cookieStore.get(COOKIE_OAUTH_STATE)?.value;
   const codeVerifier = cookieStore.get(COOKIE_OAUTH_VERIFIER)?.value;
 
-  const baseOptions = getBaseCookieOptions();
   // Clear one-time oauth handshake cookies immediately
-  cookieStore.delete(COOKIE_OAUTH_STATE, baseOptions);
-  cookieStore.delete(COOKIE_OAUTH_VERIFIER, baseOptions);
+  cookieStore.delete(COOKIE_OAUTH_STATE);
+  cookieStore.delete(COOKIE_OAUTH_VERIFIER);
 
   if (!storedState || storedState !== state || !codeVerifier) {
     return NextResponse.redirect(`${appUrl}/?authError=csrf_state_mismatch`);

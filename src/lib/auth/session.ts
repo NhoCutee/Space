@@ -121,7 +121,7 @@ export async function rotateSession(
   const newHashedToken = hashToken(newRawRefreshToken);
   const newExpiresAt = new Date(Date.now() + REFRESH_TOKEN_LIFETIME_DAYS * 24 * 60 * 60 * 1000);
 
-  const [_, newSession] = await prisma.$transaction([
+  const [, newSession] = await prisma.$transaction([
     prisma.session.update({
       where: { id: existingSession.id },
       data: {

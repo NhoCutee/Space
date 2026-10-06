@@ -1,4 +1,4 @@
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import { mkdir, writeFile, unlink, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import { randomUUID } from 'crypto';
@@ -73,8 +73,9 @@ export function detectImageSignature(buffer: Buffer): ImageSignature | null {
  */
 export async function stageOriginalUpload(
   buffer: Buffer,
-  _originalFilename?: string
+  originalFilename?: string
 ): Promise<{ sourcePath: string; sizeBytes: number; mime: AllowedImageMime }> {
+  void originalFilename; // Unused for filesystem path to guarantee path-traversal safety
   const signature = detectImageSignature(buffer);
   if (!signature) {
     throw new Error('Invalid file signature: file is not a supported image (JPEG, PNG, WebP, GIF)');

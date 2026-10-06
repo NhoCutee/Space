@@ -315,7 +315,7 @@ export async function deleteComment(
       include: {
         replies: { select: { id: true } },
         space: { select: { id: true, slug: true } },
-        drop: { select: { id: true, space: { select: { slug: true } } } },
+        drop: { select: { id: true, space: { select: { id: true, slug: true } } } },
       },
     });
 

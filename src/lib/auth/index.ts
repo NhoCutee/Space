@@ -43,7 +43,7 @@ export interface AuthUser {
  * 3. Returns null if unauthenticated. Never falls back to a mock user.
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  let cookieStore: any;
+  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null;
   try {
     cookieStore = await cookies();
   } catch {
@@ -113,7 +113,7 @@ export async function authenticateUserSession(userId: string): Promise<AuthUser>
     throw new Error('User not found');
   }
 
-  const { session, rawRefreshToken, accessToken } = await createSession(userId);
+  const { rawRefreshToken, accessToken } = await createSession(userId);
 
   try {
     const cookieStore = await cookies();

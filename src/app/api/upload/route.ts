@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     // Never trusts client-supplied Content-Type or file extension
     let stagedResult;
     try {
-      stagedResult = await stageOriginalUpload(buffer, file.name);
+      stagedResult = await stageOriginalUpload(buffer);
     } catch (stagingErr: unknown) {
       const msg = stagingErr instanceof Error ? stagingErr.message : 'Invalid image file';
       return NextResponse.json({ error: msg }, { status: 400 });
