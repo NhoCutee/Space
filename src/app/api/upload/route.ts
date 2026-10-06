@@ -33,6 +33,12 @@ export async function POST(req: NextRequest) {
   // 1. CSRF Verification
   const csrfCheck = validateRequestOrigin(req);
   if (!csrfCheck.valid) {
+    const { logSecurityEvent } = await import('@/lib/security/logger');
+    logSecurityEvent({
+      event: 'CSRF_VIOLATION',
+      severity: 'WARN',
+      details: { reason: csrfCheck.reason, path: '/api/upload' },
+    });
     return NextResponse.json(
       { error: `Cross-site request blocked: ${csrfCheck.reason}` },
       { status: 403 }
@@ -42,6 +48,12 @@ export async function POST(req: NextRequest) {
   // 2. Authentication Enforcement
   const user = await getCurrentUser();
   if (!user) {
+    const { logSecurityEvent } = await import('@/lib/security/logger');
+    logSecurityEvent({
+      event: 'AUTH_UNAUTHORIZED_ACCESS',
+      severity: 'WARN',
+      details: { path: '/api/upload', method: 'POST' },
+    });
     return NextResponse.json(
       { error: 'Unauthorized: Authentication required to upload media' },
       { status: 401 }

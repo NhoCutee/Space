@@ -95,7 +95,13 @@ export async function rotateSession(
   // Token reuse detection: if a revoked session's token is presented again,
   // revoke ALL sessions for that user immediately to protect the compromised account.
   if (existingSession.revokedAt) {
-    console.warn(`[SecurityAlert] Refresh token reuse detected for user ${existingSession.userId}. Revoking all sessions.`);
+    const { logSecurityEvent } = await import('@/lib/security/logger');
+    logSecurityEvent({
+      event: 'AUTH_SESSION_REUSE_DETECTED',
+      userId: existingSession.userId,
+      severity: 'ALERT',
+      details: { sessionId: existingSession.id },
+    });
     await revokeAllUserSessions(existingSession.userId);
     return null;
   }
