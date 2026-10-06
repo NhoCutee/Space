@@ -3,6 +3,8 @@ import { randomUUID } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
+import { validateRequestOrigin } from '@/lib/security/csrf';
 import {
   MAX_UPLOAD_FILE_SIZE,
   MEDIA_STATUS,
@@ -19,19 +21,6 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/gif',
 ]);
 
-/**
- * Media Staging and Queue Dispatch Endpoint
- * Target Flow:
- * User selects image
- * → Upload API receives/stages original
- * → temporary/private storage (tmp/staging/)
- * → create processing job
- * → RabbitMQ (spaces_image_processing queue)
- * → Image Worker (Sharp generates 5 variants)
- * → upload processed variants to Cloudinary
- * → mark processing complete (READY)
- * → delete temporary original
- */
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
@@ -41,6 +30,23 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // 1. CSRF Verification
+  const csrfCheck = validateRequestOrigin(req);
+  if (!csrfCheck.valid) {
+    return NextResponse.json(
+      { error: `Cross-site request blocked: ${csrfCheck.reason}` },
+      { status: 403 }
+    );
+  }
+
+  // 2. Authentication Enforcement
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Authentication required to upload media' },
+      { status: 401 }
+    );
+  }
 
   try {
     const formData = await req.formData();
@@ -51,6 +57,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No image file uploaded' }, { status: 400 });
     }
 
+    // 3. Client Header Sanity Check
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Allowed formats: JPEG, PNG, WebP, GIF' },
@@ -58,19 +65,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 4. File Size Limit
     if (file.size > MAX_UPLOAD_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'File size exceeds 50MB limit' },
+        { error: `File size exceeds ${MAX_UPLOAD_FILE_SIZE / (1024 * 1024)}MB limit` },
         { status: 400 }
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // 1. Stage original in temporary/private storage
-    const { sourcePath } = await stageOriginalUpload(buffer, file.name);
+    // 5. Binary Magic Bytes Inspection and Isolated Staging
+    // Never trusts client-supplied Content-Type or file extension
+    let stagedResult;
+    try {
+      stagedResult = await stageOriginalUpload(buffer, file.name);
+    } catch (stagingErr: unknown) {
+      const msg = stagingErr instanceof Error ? stagingErr.message : 'Invalid image file';
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
 
-    // 2. Create initial database record in PENDING state
+    const { sourcePath, mime } = stagedResult;
+
+    // 6. Create initial database record in PENDING state
     const mediaId = randomUUID();
     await prisma.dropMedia.create({
       data: {
@@ -81,23 +98,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 3. Create lightweight RabbitMQ Job payload (No binary data in queue)
+    // 7. Create lightweight RabbitMQ Job payload (No binary data or secrets in queue)
     const job: MediaJobPayload = {
       jobId: randomUUID(),
       mediaId,
       dropId,
       sourcePath,
-      originalFilename: file.name,
-      mimeType: file.type,
+      originalFilename: `upload-${mediaId}`,
+      mimeType: mime,
       retryCount: 0,
       createdAt: new Date().toISOString(),
     };
 
-    // 4. Dispatch lightweight job to RabbitMQ queue
+    // 8. Dispatch lightweight job to RabbitMQ queue
     await publishMediaJob(job);
 
-    // 5. Return immediate PROCESSING response without blocking HTTP connection.
-    // The background image worker will independently process variants and upload to Cloudinary.
+    // 9. Return immediate PROCESSING response
     return NextResponse.json({
       mediaId,
       status: MEDIA_STATUS.PROCESSING,

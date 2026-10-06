@@ -30,11 +30,20 @@ export async function processImageSource(
     : sourcePathOrBuffer;
 
   // 1. Initial metadata inspection & EXIF normalization (decode once)
-  const basePipeline = sharp(inputBuffer).rotate();
+  const sharpSecurityOptions = {
+    failOn: 'error' as const,
+    limitInputPixels: 40_000_000, // 40 MP max (prevents decompression bomb DoS)
+  };
+
+  const basePipeline = sharp(inputBuffer, sharpSecurityOptions).rotate();
   const metadata = await basePipeline.metadata();
 
   if (!metadata.width || !metadata.height) {
     throw new Error('Invalid or unreadable image file: missing dimensions');
+  }
+
+  if (metadata.width > 10000 || metadata.height > 10000) {
+    throw new Error('Image dimensions exceed maximum allowed limit of 10,000x10,000 pixels');
   }
 
   const originalWidth = metadata.width;
@@ -53,7 +62,7 @@ export async function processImageSource(
     blurhashBuf,
   ] = await Promise.all([
     // Variant 1: Large (1200px width, aspect ratio preserved, no upscaling, WebP q85)
-    sharp(inputBuffer)
+    sharp(inputBuffer, sharpSecurityOptions)
       .rotate()
       .resize({
         width: IMAGE_VARIANTS_CONFIG.large.width,

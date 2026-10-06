@@ -86,4 +86,4 @@ export type MediaStatusType = typeof MEDIA_STATUS[keyof typeof MEDIA_STATUS];
 
 // Retry & Limits
 export const MAX_RETRY_COUNT = 3;
-export const MAX_UPLOAD_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+export const MAX_UPLOAD_FILE_SIZE = 15 * 1024 * 1024; // 15MB safe limit
