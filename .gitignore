@@ -11,3 +11,4 @@ out
 .vscode/
 public/uploads/*
 !public/uploads/.gitkeep
+.impeccable

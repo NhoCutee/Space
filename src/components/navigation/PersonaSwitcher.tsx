@@ -16,19 +16,19 @@ const PERSONAS = [
   {
     username: 'maya_curates',
     displayName: 'Maya Lin',
-    role: 'Aesthetics & Coffee Curator',
+    role: 'Giám tuyển Thẩm mỹ & Cà phê',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
   },
   {
     username: 'kenji_shoots',
     displayName: 'Kenji Sato',
-    role: 'Tokyo Street Photographer',
+    role: 'Nhiếp ảnh gia Đường phố Tokyo',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
   },
   {
     username: 'elena_builds',
     displayName: 'Elena Vance',
-    role: 'Keyboards & Setup Builder',
+    role: 'Nhà chế tác Phím cơ & Không gian',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
   },
 ];
@@ -46,11 +46,11 @@ export function PersonaSwitcher({
     setLoading(true);
     try {
       await switchPersona(username);
-      toast.success(`Switched active persona to ${name}`);
+      toast.success(`Đã chuyển sang tài khoản ${name}`);
       setIsOpen(false);
       router.refresh();
     } catch {
-      toast.error('Failed to switch persona');
+      toast.error('Không thể chuyển tài khoản');
     } finally {
       setLoading(false);
     }
@@ -87,10 +87,10 @@ export function PersonaSwitcher({
             <div className="px-3 py-2 border-b border-border/50">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                 <Users className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Switch Test Persona</span>
+                <span>Chuyển đổi tài khoản thử nghiệm</span>
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Simulate different creators and joined spaces
+                Trải nghiệm góc nhìn từ các nhà sáng tạo khác nhau
               </p>
             </div>
 
@@ -102,7 +102,7 @@ export function PersonaSwitcher({
                     key={p.username}
                     disabled={loading}
                     onClick={() => handleSwitch(p.username, p.displayName)}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
+                    className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
                       isActive
                         ? 'bg-secondary font-medium'
                         : 'hover:bg-accent/60 text-muted-foreground hover:text-foreground'
@@ -135,10 +135,10 @@ export function PersonaSwitcher({
               <a
                 href="/onboarding"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-1.5 w-full py-1.5 text-center text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                className="flex items-center justify-center gap-1.5 w-full py-1.5 text-center text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Test New User Onboarding</span>
+                <span>Trải nghiệm luồng người dùng mới</span>
               </a>
             </div>
           </div>

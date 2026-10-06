@@ -16,3 +16,6 @@ export * from './interactions/ReactionButton';
 export * from './interactions/SaveToCollectionModal';
 export * from './interactions/comments/CommentThread';
 export * from './interactions/comments/CommentItem';
+
+// Viewer components
+export * from './viewer/DropCanvasViewer';

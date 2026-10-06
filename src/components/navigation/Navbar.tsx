@@ -46,9 +46,9 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
   };
 
   const navLinks = [
-    { href: '/', label: 'Feed', icon: Sparkles },
-    { href: '/explore', label: 'Explore', icon: Compass },
-    { href: '/collections', label: 'Collections', icon: Layers },
+    { href: '/', label: 'Bảng tin', icon: Sparkles },
+    { href: '/explore', label: 'Khám phá', icon: Compass },
+    { href: '/collections', label: 'Bộ sưu tập', icon: Layers },
   ];
 
   return (
@@ -64,9 +64,9 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
               <div className="flex flex-col">
                 <span className="font-bold text-base tracking-tight text-foreground flex items-center gap-1.5">
                   SPACES
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
                 </span>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest -mt-1 hidden sm:block">
+                <span className="text-xs text-muted-foreground/80 font-medium tracking-wide -mt-0.5 hidden sm:block">
                   Visual Commons
                 </span>
               </div>
@@ -100,13 +100,13 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
             <button
               type="button"
               onClick={handleSearchClick}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-full border border-border/80 bg-secondary/40 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs transition-all shadow-inner group cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2 rounded-full border border-border/80 bg-secondary/40 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs transition-all shadow-inner group cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none active:scale-[0.99]"
             >
               <div className="flex items-center gap-2.5">
                 <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="truncate">Search spaces, topics, aesthetics...</span>
+                <span className="truncate">Tìm Không gian, chủ đề, thẩm mỹ...</span>
               </div>
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-medium rounded-md bg-background border border-border text-muted-foreground">
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-semibold rounded-md bg-background border border-border text-muted-foreground">
                 ⌘K
               </kbd>
             </button>
@@ -118,8 +118,8 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
             <button
               type="button"
               onClick={handleSearchClick}
-              className="sm:hidden p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
-              aria-label="Search"
+              className="sm:hidden p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none active:scale-95 transition-all"
+              aria-label="Tìm kiếm"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -129,8 +129,8 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
               <button
                 type="button"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
-                aria-label="Toggle Theme"
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none active:scale-95"
+                aria-label="Chuyển chế độ sáng/tối"
               >
                 {theme === 'dark' ? (
                   <Sun className="w-4 h-4 text-amber-400" />

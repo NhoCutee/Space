@@ -61,7 +61,7 @@ export function SaveToCollectionModal({
       })
       .catch((err) => {
         console.error('Failed to load collections:', err);
-        toast.error('Failed to load your collections');
+        toast.error('Không thể tải danh sách bộ sưu tập');
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -93,25 +93,25 @@ export function SaveToCollectionModal({
           if (!res.success) {
             // Rollback
             setSavedCollectionIds(savedCollectionIds);
-            toast.error(res.error || 'Failed to remove from collection');
+            toast.error(res.error || 'Không thể xóa khỏi bộ sưu tập');
             return;
           }
-          toast.success('Removed from collection');
+          toast.success('Đã xóa khỏi bộ sưu tập');
           onSaveStateChange?.(-1);
         } else {
           const res = await saveDropToCollection(colId, dropId);
           if (!res.success) {
             // Rollback
             setSavedCollectionIds(savedCollectionIds);
-            toast.error(res.error || 'Failed to save to collection');
+            toast.error(res.error || 'Không thể lưu vào bộ sưu tập');
             return;
           }
-          toast.success('Saved to collection');
+          toast.success('Đã lưu vào bộ sưu tập');
           onSaveStateChange?.(1);
         }
       } catch {
         setSavedCollectionIds(savedCollectionIds);
-        toast.error('Network error updating collection');
+        toast.error('Không thể kết nối máy chủ khi cập nhật bộ sưu tập');
       }
     });
   };
@@ -129,7 +129,7 @@ export function SaveToCollectionModal({
       });
 
       if (!res.success || !res.collection) {
-        toast.error(res.error || 'Failed to create collection');
+        toast.error(res.error || 'Không thể tạo bộ sưu tập mới');
         return;
       }
 
@@ -140,14 +140,14 @@ export function SaveToCollectionModal({
       const saveRes = await saveDropToCollection(newCol.id, dropId);
       if (saveRes.success) {
         setSavedCollectionIds((prev) => new Set(prev).add(newCol.id));
-        toast.success(`Created "${trimmed}" and saved Drop!`);
+        toast.success(`Đã tạo "${trimmed}" và lưu tác phẩm!`);
         onSaveStateChange?.(1);
       }
 
       setNewTitle('');
       setIsCreating(false);
     } catch {
-      toast.error('Error creating collection');
+      toast.error('Lỗi khi tạo bộ sưu tập');
     } finally {
       setCreatingLoading(false);
     }
@@ -171,7 +171,7 @@ export function SaveToCollectionModal({
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-900 dark:text-foreground">
-                Save to Collection
+                Lưu vào bộ sưu tập
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-muted-foreground truncate max-w-[240px]">
                 {dropTitle}
@@ -182,6 +182,7 @@ export function SaveToCollectionModal({
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-secondary text-zinc-400 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-foreground cursor-pointer transition-colors"
+            aria-label="Đóng hộp thoại"
           >
             <X className="w-4 h-4" />
           </button>
@@ -192,20 +193,20 @@ export function SaveToCollectionModal({
           {loading ? (
             <div className="py-8 flex flex-col items-center justify-center gap-2 text-zinc-400 dark:text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-xs">Loading collections...</span>
+              <span className="text-xs">Đang tải danh sách bộ sưu tập...</span>
             </div>
           ) : collections.length === 0 && !isCreating ? (
             <div className="py-6 text-center space-y-2">
               <p className="text-xs text-zinc-500 dark:text-muted-foreground">
-                You do not have any collections yet.
+                Bạn chưa có bộ sưu tập nào.
               </p>
               <button
                 type="button"
                 onClick={() => setIsCreating(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-900 text-white dark:bg-foreground dark:text-background hover:opacity-90 cursor-pointer transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-zinc-900 text-white dark:bg-foreground dark:text-background hover:opacity-90 cursor-pointer transition-all active:scale-95"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Create first collection</span>
+                <span>Tạo bộ sưu tập đầu tiên</span>
               </button>
             </div>
           ) : (
@@ -245,7 +246,7 @@ export function SaveToCollectionModal({
                         )}
                       </div>
                       <div className="text-[10px] text-zinc-500 dark:text-muted-foreground">
-                        {col.itemsCount} {col.itemsCount === 1 ? 'drop' : 'drops'}
+                        {col.itemsCount} tác phẩm
                       </div>
                     </div>
                   </div>
@@ -271,17 +272,17 @@ export function SaveToCollectionModal({
             <form onSubmit={handleCreateAndSave} className="space-y-3">
               <div>
                 <label className="text-[11px] font-bold text-zinc-900 dark:text-foreground block mb-1">
-                  Collection Name
+                  Tên bộ sưu tập
                 </label>
                 <input
                   type="text"
                   required
                   maxLength={100}
                   autoFocus
-                  placeholder="e.g. Workspace Aesthetics, Hanoi Brews..."
+                  placeholder="Ví dụ: Cảm hứng bàn làm việc, Hà Nội hoài niệm..."
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-border bg-zinc-50/60 dark:bg-secondary/40 text-zinc-900 dark:text-foreground placeholder:text-zinc-400 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-foreground/20"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-zinc-200 dark:border-border bg-zinc-50/60 dark:bg-secondary/40 text-zinc-900 dark:text-foreground placeholder:text-zinc-400 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-foreground/20"
                 />
               </div>
 
@@ -293,7 +294,7 @@ export function SaveToCollectionModal({
                     onChange={(e) => setNewIsPrivate(e.target.checked)}
                     className="rounded border-zinc-300 dark:border-border text-foreground focus:ring-foreground/20"
                   />
-                  <span>Private Collection (Only you can view)</span>
+                  <span>Bộ sưu tập riêng tư (Chỉ mình bạn xem được)</span>
                 </label>
               </div>
 
@@ -301,21 +302,21 @@ export function SaveToCollectionModal({
                 <button
                   type="button"
                   onClick={() => setIsCreating(false)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-600 dark:text-muted-foreground hover:bg-zinc-100 dark:hover:bg-secondary cursor-pointer"
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-zinc-600 dark:text-muted-foreground hover:bg-zinc-100 dark:hover:bg-secondary cursor-pointer transition-colors"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={creatingLoading || !newTitle.trim()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-zinc-900 text-white dark:bg-foreground dark:text-background hover:opacity-90 disabled:opacity-50 cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-zinc-900 text-white dark:bg-foreground dark:text-background hover:opacity-90 disabled:opacity-50 cursor-pointer shadow-xs active:scale-95 transition-all"
                 >
                   {creatingLoading ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Plus className="w-3.5 h-3.5" />
                   )}
-                  <span>Create & Save</span>
+                  <span>Tạo & Lưu tác phẩm</span>
                 </button>
               </div>
             </form>
@@ -323,10 +324,10 @@ export function SaveToCollectionModal({
             <button
               type="button"
               onClick={() => setIsCreating(true)}
-              className="w-full py-2 px-3 rounded-2xl border border-dashed border-zinc-300 dark:border-border/80 hover:border-zinc-500 dark:hover:border-foreground/40 text-xs font-semibold text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-full border border-dashed border-zinc-300 dark:border-border/80 hover:border-zinc-500 dark:hover:border-foreground/40 text-xs font-semibold text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               <FolderPlus className="w-4 h-4" />
-              <span>Create new collection</span>
+              <span>Tạo bộ sưu tập mới</span>
             </button>
           )}
         </div>

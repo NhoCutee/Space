@@ -10,15 +10,15 @@ export function ExplainableBadge({ reason, className = '' }: ExplainableBadgePro
   const getIcon = () => {
     switch (reason.type) {
       case 'interest':
-        return <Sparkles className="w-3 h-3 text-indigo-500 shrink-0" />;
+        return <Sparkles className="w-3 h-3 text-indigo-600 dark:text-indigo-400 shrink-0" />;
       case 'joined_space':
-        return <Users className="w-3 h-3 text-emerald-500 shrink-0" />;
+        return <Users className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />;
       case 'trending':
-        return <Flame className="w-3 h-3 text-amber-500 shrink-0" />;
+        return <Flame className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />;
       case 'popular':
-        return <Heart className="w-3 h-3 text-rose-500 shrink-0" />;
+        return <Heart className="w-3 h-3 text-rose-600 dark:text-rose-400 shrink-0" />;
       default:
-        return <Compass className="w-3 h-3 text-sky-500 shrink-0" />;
+        return <Compass className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />;
     }
   };
 
@@ -39,11 +39,11 @@ export function ExplainableBadge({ reason, className = '' }: ExplainableBadgePro
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${getStyle()} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border whitespace-nowrap shrink-0 ${getStyle()} ${className}`}
       title={reason.label}
     >
       {getIcon()}
-      <span className="truncate">{reason.label}</span>
+      <span className="whitespace-nowrap leading-none">{reason.label}</span>
     </div>
   );
 }

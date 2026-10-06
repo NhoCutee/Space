@@ -46,7 +46,7 @@ export function ReactionButton({
           // Rollback on server error
           setReacted(prevReacted);
           setCount(prevCount);
-          toast.error(res.error || 'Failed to update reaction');
+          toast.error(res.error || 'Không thể cập nhật lượt thích');
           return;
         }
 
@@ -61,7 +61,7 @@ export function ReactionButton({
         // Rollback on network failure
         setReacted(prevReacted);
         setCount(prevCount);
-        toast.error('Network error updating reaction');
+        toast.error('Lỗi kết nối mạng khi cập nhật thích');
       }
     });
   };
@@ -72,15 +72,15 @@ export function ReactionButton({
     <button
       type="button"
       onClick={handleToggle}
-      aria-label={reacted ? 'Remove appreciation' : 'Appreciate Drop'}
+      aria-label={reacted ? 'Bỏ thích' : 'thích tác phẩm'}
       className={`inline-flex items-center gap-1.5 rounded-full transition-all cursor-pointer font-medium select-none ${
         isSmall
-          ? 'px-2 py-1 text-[11px]'
-          : 'px-3 py-1.5 text-xs'
+          ? 'px-2.5 py-1 text-xs'
+          : 'px-3.5 py-1.5 text-xs'
       } ${
         reacted
-          ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-          : 'bg-zinc-100 hover:bg-zinc-200/80 dark:bg-secondary/60 dark:hover:bg-secondary text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-foreground border border-zinc-200/60 dark:border-border/60'
+          ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+          : 'bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground border border-border/80'
       } ${isPending ? 'opacity-80' : 'active:scale-95'}`}
     >
       <Heart
@@ -89,11 +89,11 @@ export function ReactionButton({
         } ${
           reacted
             ? 'fill-rose-500 text-rose-500 scale-110'
-            : 'text-zinc-500 dark:text-muted-foreground group-hover:text-foreground'
+            : 'text-muted-foreground group-hover:text-foreground'
         }`}
       />
       <span className="font-semibold">{count}</span>
-      {showLabel && <span className="hidden sm:inline">Appreciate</span>}
+      {showLabel && <span className="hidden sm:inline">thích</span>}
     </button>
   );
 }

@@ -303,7 +303,7 @@ export async function getHomeFeedDrops(
       score += 70;
       reason = {
         type: 'joined_space',
-        label: `Từ Không gian "${joinedSpaceMap.get(drop.spaceId)}" bạn đã tham gia`,
+        label: 'Từ Không gian đã tham gia',
       };
     } else {
       // 2. Matches user interest
@@ -331,13 +331,13 @@ export async function getHomeFeedDrops(
         score += 30 + drop.reactionsCount * 3 + drop.savesCount * 4;
         reason = {
           type: 'trending',
-          label: `Đang được chú ý trong Không gian ${drop.space.name}`,
+          label: 'Đang được chú ý',
         };
       } else {
         score += 15;
         reason = {
           type: 'fresh',
-          label: `Khám phá mới từ ${drop.space.name}`,
+          label: 'Khám phá mới',
         };
       }
     }

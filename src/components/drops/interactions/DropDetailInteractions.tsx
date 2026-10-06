@@ -40,7 +40,7 @@ export function DropDetailInteractions({
   return (
     <div className="space-y-6">
       {/* Primary Interaction Action Bar */}
-      <div className="p-3.5 rounded-2xl bg-zinc-50/80 dark:bg-secondary/40 border border-zinc-200/80 dark:border-border/60 flex items-center justify-between gap-3">
+      <div className="p-3.5 rounded-2xl bg-secondary/40 border border-border/80 flex items-center justify-between gap-3">
         {/* Left: Reaction */}
         <ReactionButton
           dropId={dropId}
@@ -55,17 +55,19 @@ export function DropDetailInteractions({
           <button
             type="button"
             onClick={() => setIsSaveModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-zinc-900 text-white dark:bg-foreground dark:text-background hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
+            aria-label="Lưu vào bộ sưu tập"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-foreground text-background hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none"
           >
             <Bookmark className="w-3.5 h-3.5" />
-            <span>Save ({savesCount})</span>
+            <span>Lưu ({savesCount})</span>
           </button>
 
           <a
             href="#discussion"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-100 hover:bg-zinc-200/80 dark:bg-secondary/70 dark:hover:bg-secondary text-zinc-700 dark:text-foreground border border-zinc-200/60 dark:border-border/60 transition-colors"
+            aria-label="Xem bình luận"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground border border-border/80 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-indigo-500" />
+            <MessageSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>{commentsCount}</span>
           </a>
         </div>

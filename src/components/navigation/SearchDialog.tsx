@@ -189,15 +189,18 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
         <div className="p-4 sm:p-5 border-b border-border/60 flex items-center gap-3">
           <Search className="w-5 h-5 text-muted-foreground shrink-0" />
           <input
+            id="search-dialog-input"
+            name="query"
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm Không gian, bài Drop, nghệ sĩ, chủ đề... (⌘K)"
+            placeholder="Tìm Không gian, Tác phẩm, Nghệ sĩ, Chủ đề... (⌘K)"
+            aria-label="Tìm kiếm Không gian, Tác phẩm, Nghệ sĩ hoặc Chủ đề"
             className="flex-1 bg-transparent text-sm sm:text-base font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           {loading ? (
-            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
+            <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
           ) : query ? (
             <button
               type="button"
@@ -207,7 +210,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
               <X className="w-4 h-4" />
             </button>
           ) : (
-            <kbd className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono font-semibold text-muted-foreground bg-secondary rounded-lg border border-border/60">
+            <kbd className="hidden sm:inline-block px-2 py-0.5 text-xs font-mono font-semibold text-muted-foreground bg-secondary rounded-lg border border-border/60">
               ESC
             </kbd>
           )}
@@ -219,7 +222,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
             [
               { id: 'all', label: 'Tất cả' },
               { id: 'spaces', label: `Không gian (${results.spaces.length})` },
-              { id: 'drops', label: `Drops (${results.drops.length})` },
+              { id: 'drops', label: `Tác phẩm (${results.drops.length})` },
               { id: 'users', label: `Nghệ sĩ (${results.users.length})` },
               { id: 'topics', label: `Chủ đề (${results.topics.length})` },
             ] as const
@@ -298,11 +301,17 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
                     <div className="min-w-0">
                       <div className="text-xs sm:text-sm font-bold text-foreground truncate flex items-center gap-1.5">
                         <span>{item.title}</span>
-                        <span className="text-[10px] font-normal uppercase tracking-wider px-1.5 py-0.2 rounded-md bg-secondary text-muted-foreground shrink-0">
-                          {item.type}
+                        <span className="text-xs font-normal uppercase tracking-wider px-1.5 py-0.2 rounded-md bg-secondary text-muted-foreground shrink-0">
+                          {item.type === 'space'
+                            ? 'Không gian'
+                            : item.type === 'drop'
+                              ? 'Tác phẩm'
+                              : item.type === 'user'
+                                ? 'Nghệ sĩ'
+                                : 'Chủ đề'}
                         </span>
                       </div>
-                      <div className="text-[11px] text-muted-foreground truncate">
+                      <div className="text-xs text-muted-foreground truncate">
                         {item.subtitle}
                       </div>
                     </div>
@@ -310,7 +319,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
 
                   <div className="flex items-center gap-1 shrink-0 text-muted-foreground">
                     {isSelected && (
-                      <div className="hidden sm:flex items-center gap-1 text-[10px] font-mono text-zinc-400">
+                      <div className="hidden sm:flex items-center gap-1 text-xs font-mono text-zinc-400">
                         <span>Chọn</span>
                         <CornerDownLeft className="w-3 h-3" />
                       </div>
@@ -324,7 +333,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
         </div>
 
         {/* Footer shortcuts */}
-        <div className="p-3 bg-secondary/20 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+        <div className="p-3 bg-secondary/20 border-t border-border/50 text-xs text-muted-foreground flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline">
               <kbd className="font-mono bg-secondary px-1.5 py-0.5 rounded border border-border/50">↑</kbd>{' '}
@@ -345,7 +354,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
             }}
             className="text-xs font-semibold text-foreground hover:underline ml-auto flex items-center gap-1"
           >
-            <span>Tìm kiếm đầy đủ</span>
+            <span>Xem toàn bộ kết quả</span>
             <ArrowRight className="w-3 h-3" />
           </button>
         </div>

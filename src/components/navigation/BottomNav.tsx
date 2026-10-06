@@ -12,11 +12,11 @@ export function BottomNav({ currentUsername }: BottomNavProps) {
   const pathname = usePathname();
 
   const links = [
-    { href: '/', label: 'Feed', icon: Sparkles },
-    { href: '/explore', label: 'Explore', icon: Compass },
-    { href: '/create', label: 'Create', icon: Plus, isAction: true },
-    { href: '/collections', label: 'Curated', icon: Layers },
-    { href: currentUsername ? `/u/${currentUsername}` : '/onboarding', label: 'Profile', icon: User },
+    { href: '/', label: 'Bảng tin', icon: Sparkles },
+    { href: '/explore', label: 'Khám phá', icon: Compass },
+    { href: '/create', label: 'Tạo mới', icon: Plus, isAction: true },
+    { href: '/collections', label: 'Bộ sưu tập', icon: Layers },
+    { href: currentUsername ? `/u/${currentUsername}` : '/onboarding', label: 'Cá nhân', icon: User },
   ];
 
   return (
@@ -43,7 +43,7 @@ export function BottomNav({ currentUsername }: BottomNavProps) {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex flex-col items-center gap-1 py-1 px-3 text-[10px] font-medium transition-colors ${
+              className={`flex flex-col items-center gap-1 py-1 px-3 text-xs font-medium transition-colors ${
                 isActive ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
