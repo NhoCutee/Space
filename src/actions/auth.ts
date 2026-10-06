@@ -39,9 +39,21 @@ export async function switchPersona(username: string) {
 }
 
 /**
- * Production login action with rate-limiting and validation.
+ * Production login action with brute-force rate limiting.
  */
 export async function loginAction(identifier: string, password: string) {
+  const { checkRateLimit, RATE_LIMIT_PRESETS } = await import('@/lib/security/rateLimit');
+  const rateLimitKey = `auth:login:${identifier.trim().toLowerCase()}`;
+  const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_PRESETS.AUTH);
+
+  if (!rateLimit.allowed) {
+    const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000);
+    return {
+      success: false,
+      error: `Too many login attempts. Please try again in ${retryAfter} seconds.`,
+    };
+  }
+
   const result = await loginWithCredentials(identifier, password);
   if (result.success) {
     revalidatePath('/');
@@ -50,7 +62,7 @@ export async function loginAction(identifier: string, password: string) {
 }
 
 /**
- * Production registration action with password policy enforcement.
+ * Production registration action with rate limiting and password policy enforcement.
  */
 export async function registerAction(params: {
   username: string;
@@ -59,6 +71,18 @@ export async function registerAction(params: {
   password: string;
   bio?: string;
 }) {
+  const { checkRateLimit, RATE_LIMIT_PRESETS } = await import('@/lib/security/rateLimit');
+  const rateLimitKey = `auth:register:${params.email.trim().toLowerCase()}`;
+  const rateLimit = await checkRateLimit(rateLimitKey, RATE_LIMIT_PRESETS.AUTH);
+
+  if (!rateLimit.allowed) {
+    const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000);
+    return {
+      success: false,
+      error: `Too many registration attempts. Please try again in ${retryAfter} seconds.`,
+    };
+  }
+
   const result = await registerWithCredentials(params);
   if (result.success) {
     revalidatePath('/');

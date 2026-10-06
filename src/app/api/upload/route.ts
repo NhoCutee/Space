@@ -48,6 +48,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // 3. Rate Limiting Protection (Max 10 uploads/min per user)
+  const { checkRateLimit, RATE_LIMIT_PRESETS } = await import('@/lib/security/rateLimit');
+  const uploadLimit = await checkRateLimit(`upload:${user.id}`, RATE_LIMIT_PRESETS.UPLOAD);
+  if (!uploadLimit.allowed) {
+    const retryAfter = Math.ceil((uploadLimit.resetAt - Date.now()) / 1000);
+    return NextResponse.json(
+      { error: `Upload rate limit reached. Please wait ${retryAfter} seconds.` },
+      { status: 429 }
+    );
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
