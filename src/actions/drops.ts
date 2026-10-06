@@ -340,3 +340,61 @@ export async function getSpaceDrops(spaceSlug: string, filter: 'all' | 'curated'
     };
   });
 }
+
+/**
+ * Deletes a Drop owned by the current user or by the Space creator/moderator.
+ */
+export async function deleteDrop(dropId: string): Promise<{ success: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: 'Unauthorized: Authentication required' };
+  }
+
+  try {
+    const drop = await prisma.drop.findUnique({
+      where: { id: dropId },
+      include: {
+        space: {
+          select: {
+            id: true,
+            slug: true,
+            members: {
+              where: { userId: user.id },
+              select: { role: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!drop) {
+      return { success: false, error: 'Drop not found' };
+    }
+
+    const userMembership = drop.space.members[0];
+    const isOwner = drop.userId === user.id;
+    const isModeratorOrCreator = Boolean(
+      userMembership && (userMembership.role === 'CREATOR' || userMembership.role === 'MODERATOR')
+    );
+
+    if (!isOwner && !isModeratorOrCreator) {
+      return { success: false, error: 'Unauthorized: You do not have permission to delete this Drop' };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.drop.delete({ where: { id: dropId } });
+      await tx.space.update({
+        where: { id: drop.spaceId },
+        data: { dropsCount: { decrement: 1 } },
+      });
+    });
+
+    revalidatePath('/');
+    revalidatePath('/explore');
+    revalidatePath(`/s/${drop.space.slug}`);
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to delete Drop:', err);
+    return { success: false, error: 'Failed to delete Drop' };
+  }
+}

@@ -323,9 +323,22 @@ export async function deleteComment(
       return { success: false, error: 'Comment not found.' };
     }
 
-    // Access control: only author can delete
-    if (comment.userId !== user.id) {
-      return { success: false, error: 'You can only delete your own comments.' };
+    // Access control: author OR space moderator/creator can delete
+    const isAuthor = comment.userId === user.id;
+    let isSpaceMod = false;
+    const targetSpaceId = comment.spaceId || (comment.drop ? comment.drop.space?.id : null);
+    if (targetSpaceId) {
+      const membership = await prisma.spaceMember.findUnique({
+        where: { spaceId_userId: { spaceId: targetSpaceId, userId: user.id } },
+        select: { role: true },
+      });
+      isSpaceMod = Boolean(
+        membership && (membership.role === 'CREATOR' || membership.role === 'MODERATOR')
+      );
+    }
+
+    if (!isAuthor && !isSpaceMod) {
+      return { success: false, error: 'You do not have permission to delete this comment.' };
     }
 
     const totalToDelete = 1 + comment.replies.length;

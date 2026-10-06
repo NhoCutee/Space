@@ -123,6 +123,16 @@ export async function toggleSaveToCollection(collectionId: string, dropId: strin
   const user = await getCurrentUser();
   if (!user) throw new Error('Authentication required');
 
+  // Server-side ownership verification (Mitigates BOLA/IDOR)
+  const collection = await prisma.collection.findUnique({
+    where: { id: collectionId },
+    select: { id: true, userId: true },
+  });
+
+  if (!collection || collection.userId !== user.id) {
+    throw new Error('Unauthorized: You can only modify your own collections');
+  }
+
   const existing = await prisma.collectionItem.findUnique({
     where: {
       collectionId_dropId: {
