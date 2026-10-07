@@ -122,3 +122,42 @@ export async function uploadAllVariants(
 export function isCloudinaryLive(): boolean {
   return Boolean(getCloudinary());
 }
+
+/**
+ * Upload a processed avatar WebP buffer to Cloudinary or local CDN storage.
+ */
+export async function uploadAvatarImage(userId: string, buffer: Buffer): Promise<string> {
+  const cld = getCloudinary();
+  const folder = 'spaces/avatars';
+  const publicId = `${folder}/${userId}`;
+
+  if (cld) {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cld.uploader.upload_stream(
+        {
+          public_id: publicId,
+          overwrite: true,
+          invalidate: true,
+          resource_type: 'image',
+          format: 'webp',
+        },
+        (error, result) => {
+          if (error || !result) {
+            return reject(new Error(`Cloudinary avatar upload failed: ${error?.message || 'Unknown error'}`));
+          }
+          resolve(result.secure_url);
+        }
+      );
+      uploadStream.end(buffer);
+    });
+  }
+
+  // Local storage fallback
+  const cdnDir = join(process.cwd(), 'public', 'cdn', 'avatars');
+  await mkdir(cdnDir, { recursive: true });
+  const filename = `${userId}-${Date.now()}.webp`;
+  const filePath = join(cdnDir, filename);
+  await writeFile(filePath, buffer);
+
+  return `/cdn/avatars/${filename}`;
+}

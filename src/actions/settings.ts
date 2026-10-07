@@ -25,8 +25,85 @@ import {
 import { checkRateLimit, RATE_LIMIT_PRESETS } from '@/lib/security/rateLimit';
 
 // =========================================================================
-// 1. PROFILE SETTINGS
+// 1. PROFILE SETTINGS & AVATAR UPLOAD
 // =========================================================================
+
+export async function uploadAvatarAction(formData: FormData): Promise<{
+  success: boolean;
+  avatarUrl?: string;
+  error?: string;
+}> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { success: false, error: 'Bạn cần đăng nhập để tải ảnh đại diện.' };
+  }
+
+  // Rate limit avatar upload
+  const rateLimit = await checkRateLimit(`avatar:${currentUser.id}`, RATE_LIMIT_PRESETS.UPLOAD);
+  if (!rateLimit.allowed) {
+    const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000);
+    return { success: false, error: `Tải ảnh quá nhanh. Vui lòng thử lại sau ${retryAfter} giây.` };
+  }
+
+  const file = formData.get('avatar') as File | null;
+  if (!file) {
+    return { success: false, error: 'Vui lòng chọn tệp hình ảnh để tải lên.' };
+  }
+
+  // Validate file size (max 8MB)
+  if (file.size > 8 * 1024 * 1024) {
+    return { success: false, error: 'Dung lượng ảnh tối đa là 8MB.' };
+  }
+
+  const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+  if (!allowedTypes.has(file.type)) {
+    return { success: false, error: 'Định dạng tệp không được hỗ trợ. Vui lòng chọn ảnh JPG, PNG, WebP hoặc GIF.' };
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const inputBuffer = Buffer.from(arrayBuffer);
+
+    // Dynamic import sharp
+    const sharp = (await import('sharp')).default;
+    const metadata = await sharp(inputBuffer).metadata();
+
+    if (!metadata.format || !['jpeg', 'png', 'webp', 'gif', 'avif'].includes(metadata.format)) {
+      return { success: false, error: 'Tệp tải lên không phải là định dạng hình ảnh hợp lệ.' };
+    }
+
+    // High quality center-crop to square 400x400 WebP
+    const processedBuffer = await sharp(inputBuffer)
+      .rotate() // Auto-orient based on EXIF
+      .resize(400, 400, {
+        fit: 'cover',
+        position: 'center',
+      })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    const { uploadAvatarImage } = await import('@/lib/media/cloudinary');
+    const avatarUrl = await uploadAvatarImage(currentUser.id, processedBuffer);
+
+    // Save directly to user record
+    await prisma.user.update({
+      where: { id: currentUser.id },
+      data: { avatarUrl },
+    });
+
+    try {
+      revalidatePath('/settings/profile');
+      revalidatePath('/settings');
+      revalidatePath(`/u/${currentUser.username}`);
+      revalidatePath('/');
+    } catch {}
+
+    return { success: true, avatarUrl };
+  } catch (err: unknown) {
+    console.error('[UploadAvatar] Error:', err);
+    return { success: false, error: 'Có lỗi xảy ra khi xử lý và lưu ảnh đại diện.' };
+  }
+}
 
 export async function updateProfileAction(data: {
   displayName: string;

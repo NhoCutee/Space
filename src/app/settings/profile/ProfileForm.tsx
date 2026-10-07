@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateProfileAction } from '@/actions/settings';
-import { Loader2, Sparkles, Plus, X, RefreshCw } from 'lucide-react';
+import { updateProfileAction, uploadAvatarAction } from '@/actions/settings';
+import { Loader2, Sparkles, Plus, X, Upload, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ProfileFormProps {
@@ -33,6 +33,7 @@ const SUGGESTED_INTERESTS = [
 
 export function ProfileForm({ initialData }: ProfileFormProps) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState(initialData.displayName);
   const [username, setUsername] = useState(initialData.username);
   const [bio, setBio] = useState(initialData.bio);
@@ -40,14 +41,57 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
   const [avatarUrl, setAvatarUrl] = useState(initialData.avatarUrl);
   const [customTag, setCustomTag] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
 
   const defaultAvatar = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(username || 'seed')}`;
-  const currentAvatarSrc = avatarUrl || defaultAvatar;
+  const currentAvatarSrc = previewAvatar || avatarUrl || defaultAvatar;
 
-  const handleRandomAvatar = () => {
-    const randomSeed = Math.random().toString(36).substring(2, 9);
-    const newAvatar = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(randomSeed)}`;
-    setAvatarUrl(newAvatar);
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('Dung lượng ảnh tối đa là 8MB.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Vui lòng chọn ảnh định dạng JPG, PNG, WebP hoặc GIF.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Instant optimistic local preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewAvatar(objectUrl);
+    setIsUploadingAvatar(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const res = await uploadAvatarAction(formData);
+      if (!res.success || !res.avatarUrl) {
+        toast.error(res.error || 'Tải ảnh lên thất bại.');
+        setPreviewAvatar(null);
+        return;
+      }
+
+      setAvatarUrl(res.avatarUrl);
+      setPreviewAvatar(res.avatarUrl);
+      toast.success('Đã tải và cập nhật ảnh đại diện thành công!');
+      router.refresh();
+    } catch (err: unknown) {
+      console.error('[ProfileForm] Upload avatar error:', err);
+      toast.error('Có lỗi xảy ra khi tải ảnh lên.');
+      setPreviewAvatar(null);
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleToggleTag = (tag: string) => {
@@ -126,44 +170,72 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 1. Avatar Section */}
       <div className="p-6 rounded-3xl glass border border-border/80 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Ảnh đại diện
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Ảnh đại diện
+          </h3>
+          <span className="text-[11px] text-muted-foreground">Tối đa 8MB • Tự động chuẩn hóa 400×400</span>
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-          <img
-            src={currentAvatarSrc}
-            alt="Avatar preview"
-            className="w-20 h-20 rounded-full object-cover ring-2 ring-border shrink-0 bg-secondary"
-          />
+          {/* Avatar Container with upload trigger on click */}
+          <div className="relative group shrink-0 w-20 h-20">
+            <img
+              src={currentAvatarSrc}
+              alt="Avatar preview"
+              className="w-20 h-20 rounded-full object-cover ring-2 ring-border/80 bg-secondary"
+            />
+            {/* Overlay button */}
+            <button
+              type="button"
+              disabled={isUploadingAvatar}
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all cursor-pointer text-white disabled:opacity-100 disabled:bg-black/60"
+              aria-label="Tải ảnh mới từ thiết bị"
+              title="Nhấn để thay đổi ảnh đại diện"
+            >
+              {isUploadingAvatar ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Camera className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+
           <div className="space-y-2 flex-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleAvatarFileChange}
+              disabled={isUploadingAvatar}
+            />
+
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={handleRandomAvatar}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 transition-all cursor-pointer"
+                disabled={isUploadingAvatar}
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-50"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Tạo ngẫu nhiên (DiceBear)</span>
+                {isUploadingAvatar ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang tải lên...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Tải ảnh từ thiết bị</span>
+                  </>
+                )}
               </button>
-              {avatarUrl && (
-                <button
-                  type="button"
-                  onClick={() => setAvatarUrl('')}
-                  className="px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                >
-                  Dùng mặc định
-                </button>
-              )}
             </div>
-            <div className="relative">
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="Hoặc dán URL ảnh trực tiếp (https://...)"
-                className="w-full text-xs px-3.5 py-2 rounded-xl bg-secondary/40 border border-border/60 focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/60"
-              />
-            </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Tải ảnh chân dung hoặc tác phẩm đại diện của bạn từ máy tính. Hỗ trợ JPG, PNG, WebP hoặc GIF (tối đa 8MB).
+            </p>
           </div>
         </div>
       </div>
