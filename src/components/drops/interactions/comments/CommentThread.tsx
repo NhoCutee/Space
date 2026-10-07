@@ -173,6 +173,7 @@ export function CommentThread({
 
   const handleRealtimeDeleted = useCallback(
     (commentId: string, parentId?: string | null, deletedCount = 1, isSoftDeleted = false) => {
+      void deletedCount;
       setComments((prev) => {
         if (!parentId) {
           if (isSoftDeleted) {
@@ -215,10 +216,8 @@ export function CommentThread({
           return c;
         });
       });
-
-      onCommentsCountChange?.(Math.max(0, totalComments - deletedCount));
     },
-    [totalComments, onCommentsCountChange]
+    []
   );
 
   const handleRealtimeReacted = useCallback(
@@ -470,8 +469,6 @@ export function CommentThread({
       setNewContent('');
       toast.success('Đã đăng bình luận');
 
-      const nextTotal = totalComments + 1;
-      onCommentsCountChange?.(nextTotal);
     } catch {
       toast.error('Lỗi khi đăng bình luận');
     } finally {
@@ -514,7 +511,6 @@ export function CommentThread({
       );
 
       toast.success('Đã gửi câu trả lời');
-      onCommentsCountChange?.(totalComments + 1);
       return true;
     } catch {
       toast.error('Lỗi khi gửi câu trả lời');
@@ -625,7 +621,6 @@ export function CommentThread({
       });
 
       toast.success(deleteTarget.isReply ? 'Đã xóa câu trả lời' : 'Đã xóa bình luận');
-      onCommentsCountChange?.(Math.max(0, totalComments - 1));
       setDeleteTarget(null);
     } catch {
       toast.error('Lỗi khi xóa bình luận');

@@ -37,11 +37,15 @@ export function DropDetailInteractions({
   const [savesCount, setSavesCount] = useState(initialSavesCount);
 
   // Compute exact count from initialComments so the comment badge next to Save matches exactly
-  const initialComputedCount = initialComments.reduce(
-    (acc, c) => acc + (c.deletedAt ? 0 : 1) + (c.replies?.filter((r) => !r.deletedAt).length || 0),
-    0
+  const initialComputedCount = initialComments.length > 0
+    ? initialComments.reduce(
+        (acc, c) => acc + (c.deletedAt ? 0 : 1) + (c.replies?.filter((r) => !r.deletedAt).length || 0),
+        0
+      )
+    : initialCommentsCount;
+  const [commentsCount, setCommentsCount] = useState(
+    initialComments.length > 0 ? initialComputedCount : initialCommentsCount
   );
-  const [commentsCount, setCommentsCount] = useState(initialComputedCount);
 
   return (
     <div className="space-y-6">
