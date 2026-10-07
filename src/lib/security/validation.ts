@@ -99,3 +99,51 @@ export const CollectionInputSchema = z.object({
   description: z.string().trim().max(500).nullable().optional(),
   isPrivate: z.boolean().optional(),
 });
+
+export const ProfileInputSchema = z.object({
+  displayName: z.string().trim().min(2, 'Tên hiển thị tối thiểu 2 ký tự').max(60, 'Tên hiển thị tối đa 60 ký tự'),
+  username: z
+    .string()
+    .trim()
+    .min(3, 'Tên người dùng tối thiểu 3 ký tự')
+    .max(30, 'Tên người dùng tối đa 30 ký tự')
+    .regex(/^[a-z0-9_]+$/, 'Tên người dùng chỉ gồm chữ thường, số và dấu gạch dưới'),
+  bio: z.string().trim().max(300, 'Tiểu sử tối đa 300 ký tự').optional().nullable(),
+  interests: z.array(z.string().trim().max(40)).max(15, 'Tối đa 15 sở thích').optional(),
+  avatarUrl: z.string().refine(isSafeUrl, 'URL ảnh đại diện không hợp lệ').optional().nullable(),
+});
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+  newPassword: z.string().min(8, 'Mật khẩu mới tối thiểu 8 ký tự').max(128),
+  confirmPassword: z.string().min(8, 'Xác nhận mật khẩu tối thiểu 8 ký tự').max(128),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Mật khẩu xác nhận không trùng khớp',
+  path: ['confirmPassword'],
+});
+
+export const EmailChangeSchema = z.object({
+  newEmail: z.string().email('Địa chỉ email mới không hợp lệ').max(100),
+  currentPassword: z.string().optional(),
+});
+
+export const PrivacySettingsSchema = z.object({
+  isPrivateProfile: z.boolean().optional(),
+  showEmail: z.boolean().optional(),
+  activityPublic: z.boolean().optional(),
+});
+
+export const NotificationSettingsSchema = z.object({
+  notifyComments: z.boolean().optional(),
+  notifyReplies: z.boolean().optional(),
+  notifyReactions: z.boolean().optional(),
+  notifyCuratorPick: z.boolean().optional(),
+});
+
+export const PreferencesSchema = z.object({
+  theme: z.enum(['light', 'dark', 'system'], {
+    message: 'Giao diện phải là light, dark hoặc system',
+  }),
+  reducedMotion: z.boolean().optional(),
+});
+

@@ -28,6 +28,7 @@ model User {
   collections  Collection[]
   notificationsReceived Notification[] @relation("RecipientUser")
   notificationsSent     Notification[] @relation("ActorUser")
+  settings     UserSettings?
 }
 
 model Session {
@@ -202,4 +203,30 @@ model Notification {
   actor       User      @relation("ActorUser", fields: [actorId], references: [id], onDelete: Cascade)
   drop        Drop?     @relation(fields: [dropId], references: [id], onDelete: Cascade)
   space       Space?    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+}
+
+model UserSettings {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Privacy Controls
+  isPrivateProfile  Boolean  @default(false)
+  showEmail         Boolean  @default(false)
+  activityPublic    Boolean  @default(true)
+
+  // Notification Preferences
+  notifyComments    Boolean  @default(true)
+  notifyReplies     Boolean  @default(true)
+  notifyReactions   Boolean  @default(true)
+  notifyCuratorPick Boolean  @default(true)
+
+  // Application & Appearance Preferences
+  theme             String   @default("system") // light, dark, system
+  reducedMotion     Boolean  @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  @@index([userId])
 }
