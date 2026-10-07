@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -12,6 +12,8 @@ import {
   Plus,
   X,
   MapPin,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { HomeFeedData } from '@/actions/feed';
 import { ScoredSpace } from '@/lib/recommendations/scoring';
@@ -50,6 +52,111 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
       localStorage.setItem('spaces:dismissed-onboarding-banner', 'true');
     } catch {}
   };
+
+  // Curated spaces horizontal rail scroll & drag handling
+  const railRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [scrollRatio, setScrollRatio] = useState(0); // 0 to 1
+  const [thumbWidthPercent, setThumbWidthPercent] = useState(30);
+
+  // Mouse drag-to-scroll on the rail
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartScrollLeft, setDragStartScrollLeft] = useState(0);
+  const [hasDragged, setHasDragged] = useState(false);
+
+  // Dragging on the custom track
+  const [isTrackDragging, setIsTrackDragging] = useState(false);
+
+  const updateScrollMetrics = useCallback(() => {
+    if (!railRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = railRef.current;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+
+    const maxScroll = scrollWidth - clientWidth;
+    if (maxScroll > 0) {
+      setScrollRatio(Math.max(0, Math.min(1, scrollLeft / maxScroll)));
+      const visibleRatio = clientWidth / scrollWidth;
+      setThumbWidthPercent(Math.max(15, Math.min(50, Math.round(visibleRatio * 100))));
+    } else {
+      setScrollRatio(0);
+      setThumbWidthPercent(100);
+    }
+  }, []);
+
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el) return;
+    updateScrollMetrics();
+    el.addEventListener('scroll', updateScrollMetrics, { passive: true });
+    window.addEventListener('resize', updateScrollMetrics);
+    return () => {
+      el.removeEventListener('scroll', updateScrollMetrics);
+      window.removeEventListener('resize', updateScrollMetrics);
+    };
+  }, [updateScrollMetrics, recommendedSpaces.length]);
+
+  const handleScrollRail = (direction: 'left' | 'right') => {
+    if (!railRef.current) return;
+    const offset = direction === 'left' ? -340 : 340;
+    railRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!railRef.current) return;
+    setIsMouseDown(true);
+    setHasDragged(false);
+    setDragStartX(e.pageX - railRef.current.offsetLeft);
+    setDragStartScrollLeft(railRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isMouseDown || !railRef.current) return;
+    const currentX = e.pageX - railRef.current.offsetLeft;
+    const distance = currentX - dragStartX;
+    if (Math.abs(distance) > 5) {
+      setHasDragged(true);
+    }
+    railRef.current.scrollLeft = dragStartScrollLeft - distance;
+  };
+
+  const handleMouseUp = () => {
+    setIsMouseDown(false);
+  };
+
+  const handleTrackMove = useCallback((e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
+    if (!trackRef.current || !railRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const clickX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const ratio = clickX / rect.width;
+    const maxScroll = railRef.current.scrollWidth - railRef.current.clientWidth;
+    railRef.current.scrollLeft = ratio * maxScroll;
+  }, []);
+
+  const handleTrackMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsTrackDragging(true);
+    handleTrackMove(e);
+  };
+
+  useEffect(() => {
+    if (!isTrackDragging) return;
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      handleTrackMove(e);
+    };
+    const handleGlobalMouseUp = () => {
+      setIsTrackDragging(false);
+    };
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isTrackDragging, handleTrackMove]);
 
   const { user, isNewUser, feedDrops, joinedSpaces } = initialData;
 
@@ -175,7 +282,7 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
         </div>
       </div>
 
-      {/* SECTION 1: Curated Spaces Discovery Rail */}
+      {/* SECTION 1: Curated Spaces Discovery Rail with Interactive Drag Track ("Thanh kéo") */}
       {recommendedSpaces.length > 0 && activeFilter === 'all' && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
@@ -183,22 +290,67 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
               <Compass className="w-4 h-4 text-indigo-500" />
               <span>Không gian tuyển chọn</span>
             </h3>
-            <Link
-              href="/explore"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
-            >
-              <span>Xem tất cả</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+
+            <div className="flex items-center gap-2.5">
+              {/* Desktop Scroll arrow navigation buttons */}
+              <div className="hidden sm:flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleScrollRail('left')}
+                  disabled={!canScrollLeft}
+                  className="p-1 rounded-full border border-border/80 bg-secondary/60 hover:bg-secondary text-foreground disabled:opacity-25 disabled:pointer-events-none transition-all cursor-pointer shadow-2xs active:scale-95"
+                  aria-label="Cuộn sang trái"
+                  title="Cuộn sang trái"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleScrollRail('right')}
+                  disabled={!canScrollRight}
+                  className="p-1 rounded-full border border-border/80 bg-secondary/60 hover:bg-secondary text-foreground disabled:opacity-25 disabled:pointer-events-none transition-all cursor-pointer shadow-2xs active:scale-95"
+                  aria-label="Cuộn sang phải"
+                  title="Cuộn sang phải"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <Link
+                href="/explore"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
+              >
+                <span>Xem tất cả</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
 
-          <div className="flex items-stretch gap-4 overflow-x-auto pb-2 px-1 scrollbar-none snap-x snap-mandatory">
+          {/* Horizontal Scroll Rail with Mouse Drag and Single Refined Drag Track */}
+          <div
+            ref={railRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            className={`flex items-stretch gap-4 overflow-x-auto pb-2 px-1 no-scrollbar scrollbar-none snap-x snap-mandatory ${
+              isMouseDown ? 'cursor-grabbing select-none' : 'cursor-grab'
+            }`}
+          >
             {recommendedSpaces.map((space) => (
               <div
                 key={space.id}
                 className="w-72 sm:w-80 shrink-0 snap-start rounded-2xl border border-border/80 bg-card p-3 flex items-center justify-between gap-3 hover:border-foreground/30 hover:shadow-xs transition-all"
               >
-                <Link href={`/s/${space.slug}`} className="flex items-center gap-3 min-w-0 flex-1 group">
+                <Link
+                  href={`/s/${space.slug}`}
+                  onClick={(e) => {
+                    if (hasDragged) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="flex items-center gap-3 min-w-0 flex-1 group"
+                >
                   <img
                     src={space.coverImageUrl}
                     alt={space.name}
@@ -243,6 +395,29 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Thanh kéo điều hướng trực quan duy nhất (Single Interactive Drag Bar) */}
+          <div className="pt-1 px-1 flex items-center gap-3">
+            <div
+              ref={trackRef}
+              onMouseDown={handleTrackMouseDown}
+              className="relative flex-1 py-1.5 cursor-pointer select-none group/track"
+              title="Kéo hoặc nhấn thanh này để cuộn Không gian tuyển chọn"
+            >
+              <div className="relative h-1.5 sm:h-2 w-full rounded-full bg-secondary/80 group-hover/track:bg-secondary border border-border/60 overflow-hidden transition-colors">
+                <div
+                  className="h-full rounded-full bg-zinc-400 dark:bg-zinc-500 group-hover/track:bg-indigo-500 active:bg-indigo-600 transition-colors shadow-2xs pointer-events-none"
+                  style={{
+                    width: `${thumbWidthPercent}%`,
+                    marginLeft: `${scrollRatio * (100 - thumbWidthPercent)}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <span className="text-[10px] font-medium text-muted-foreground shrink-0 select-none hidden sm:inline">
+              Kéo để xem tiếp
+            </span>
           </div>
         </section>
       )}

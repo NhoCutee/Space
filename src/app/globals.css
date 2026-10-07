@@ -136,6 +136,15 @@ a {
   background: #3f3f46;
 }
 
+/* Utility to hide native scrollbars while retaining scrolling functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Accessible reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
