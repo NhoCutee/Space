@@ -107,7 +107,7 @@ export function UserIdentity({
 
   const roleBadgeElement = showRoleBadge && user.role && (
     <span
-      className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 shrink-0"
+      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 shrink-0"
       title={`Vai trò: ${user.role}`}
     >
       <Shield className="w-2.5 h-2.5" />

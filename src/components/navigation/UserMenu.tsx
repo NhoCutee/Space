@@ -122,7 +122,7 @@ export function UserMenu({ user }: UserMenuProps) {
                   @{user.username}
                 </div>
                 {user.role && (
-                  <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                  <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
                     <Shield className="w-2.5 h-2.5" />
                     <span>{user.role}</span>
                   </div>

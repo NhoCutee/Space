@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -30,6 +30,7 @@ interface HomeFeedViewProps {
 
 export function HomeFeedView({ initialData }: HomeFeedViewProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'joined' | 'curated'>('all');
+  const [sortOrder, setSortOrder] = useState<'curated' | 'latest'>('curated');
   const [recommendedSpaces, setRecommendedSpaces] = useState<ScoredSpace[]>(
     initialData.recommendedSpaces
   );
@@ -61,11 +62,12 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
   const [scrollRatio, setScrollRatio] = useState(0); // 0 to 1
   const [thumbWidthPercent, setThumbWidthPercent] = useState(30);
 
-  // Mouse drag-to-scroll on the rail
+  // Mouse drag-to-scroll on the rail with jitter prevention
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [dragStartX, setDragStartX] = useState(0);
   const [dragStartScrollLeft, setDragStartScrollLeft] = useState(0);
   const [hasDragged, setHasDragged] = useState(false);
+  const dragStartTimeRef = useRef<number>(0);
 
   // Dragging on the custom track
   const [isTrackDragging, setIsTrackDragging] = useState(false);
@@ -109,6 +111,7 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
     if (!railRef.current) return;
     setIsMouseDown(true);
     setHasDragged(false);
+    dragStartTimeRef.current = Date.now();
     setDragStartX(e.pageX - railRef.current.offsetLeft);
     setDragStartScrollLeft(railRef.current.scrollLeft);
   };
@@ -117,7 +120,9 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
     if (!isMouseDown || !railRef.current) return;
     const currentX = e.pageX - railRef.current.offsetLeft;
     const distance = currentX - dragStartX;
-    if (Math.abs(distance) > 5) {
+    const elapsed = Date.now() - dragStartTimeRef.current;
+    // Require deliberate gesture (>12px and >60ms) to avoid trackpad tap-jitter canceling clicks
+    if (Math.abs(distance) > 12 && elapsed > 60) {
       setHasDragged(true);
     }
     railRef.current.scrollLeft = dragStartScrollLeft - distance;
@@ -162,7 +167,15 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
 
   const handleQuickSave = (dropId: string, dropTitle: string) => {
     if (!user) {
-      toast.error('Vui lòng đăng nhập để lưu tác phẩm vào bộ sưu tập');
+      toast('Tạo bộ sưu tập cá nhân', {
+        description: 'Đăng nhập để lưu tác phẩm này vào bộ sưu tập của riêng bạn.',
+        action: {
+          label: 'Đăng nhập',
+          onClick: () => {
+            window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+          },
+        },
+      });
       return;
     }
     setSaveModalDrop({ id: dropId, title: dropTitle });
@@ -204,13 +217,23 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
     }
   };
 
-  // Filter drops client-side for instant switching
-  const displayedDrops = feedDrops.filter((d) => {
-    if (activeFilter === 'joined') {
-      return joinedSpaces.some((s) => s.id === d.space.id);
+  // Filter & sort drops client-side for instant switching
+  const displayedDrops = useMemo(() => {
+    let drops = feedDrops.filter((d) => {
+      if (activeFilter === 'joined') {
+        return joinedSpaces.some((s) => s.id === d.space.id);
+      }
+      return true;
+    });
+
+    if (sortOrder === 'latest') {
+      drops = [...drops].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     }
-    return true;
-  });
+
+    return drops;
+  }, [feedDrops, activeFilter, joinedSpaces, sortOrder]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
@@ -337,64 +360,109 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
               isMouseDown ? 'cursor-grabbing select-none' : 'cursor-grab'
             }`}
           >
-            {recommendedSpaces.map((space) => (
-              <div
-                key={space.id}
-                className="w-72 sm:w-80 shrink-0 snap-start rounded-2xl border border-border/80 bg-card p-3 flex items-center justify-between gap-3 hover:border-foreground/30 hover:shadow-xs transition-all"
-              >
-                <Link
-                  href={`/s/${space.slug}`}
-                  onClick={(e) => {
-                    if (hasDragged) {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="flex items-center gap-3 min-w-0 flex-1 group"
+            {recommendedSpaces.map((space) => {
+              const hasSamples = space.sampleDrops && space.sampleDrops.length > 0;
+              return (
+                <div
+                  key={space.id}
+                  className="w-72 sm:w-80 shrink-0 snap-start rounded-2xl border border-border/80 bg-card p-3 flex flex-col justify-between gap-2.5 hover:border-foreground/30 hover:shadow-xs transition-all"
                 >
-                  <img
-                    src={space.coverImageUrl}
-                    alt={space.name}
-                    className="w-12 h-12 rounded-xl object-cover ring-1 ring-border/60 shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider truncate">
-                      {space.category}
-                    </div>
-                    <h4 className="text-xs font-bold text-foreground truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                      {space.name}
-                    </h4>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {space.membersCount} thành viên
-                    </p>
-                  </div>
-                </Link>
+                  <div className="flex items-center justify-between gap-2.5">
+                    <Link
+                      href={`/s/${space.slug}`}
+                      onClick={(e) => {
+                        if (hasDragged) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className="flex items-center gap-2.5 min-w-0 flex-1 group"
+                    >
+                      <img
+                        src={space.coverImageUrl}
+                        alt={space.name}
+                        className="w-10 h-10 rounded-xl object-cover ring-1 ring-border/60 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider truncate">
+                          {space.category}
+                        </div>
+                        <h4 className="text-xs font-bold text-foreground truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {space.name}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {space.membersCount} thành viên
+                        </p>
+                      </div>
+                    </Link>
 
-                {user && (
-                  <button
-                    type="button"
-                    onClick={() => handleToggleJoin(space)}
-                    disabled={joiningSpaceId === space.id}
-                    className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none ${
-                      space.isJoined
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                        : 'bg-foreground text-background hover:opacity-90 shadow-xs'
-                    }`}
-                  >
-                    {space.isJoined ? (
-                      <>
-                        <Check className="w-3 h-3 stroke-[2.5]" />
-                        <span>Đã tham gia</span>
-                      </>
+                    {user ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleJoin(space)}
+                        disabled={joiningSpaceId === space.id}
+                        className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none ${
+                          space.isJoined
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                            : 'bg-foreground text-background hover:opacity-90 shadow-xs'
+                        }`}
+                      >
+                        {space.isJoined ? (
+                          <>
+                            <Check className="w-3 h-3 stroke-[2.5]" />
+                            <span>Đã tham gia</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3 h-3 stroke-[2.5]" />
+                            <span>Tham gia</span>
+                          </>
+                        )}
+                      </button>
                     ) : (
-                      <>
+                      <Link
+                        href={`/login?callbackUrl=${encodeURIComponent(`/s/${space.slug}`)}`}
+                        onClick={(e) => {
+                          if (hasDragged) {
+                            e.preventDefault();
+                          }
+                        }}
+                        className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border border-border/80 bg-secondary/60 hover:bg-secondary text-foreground transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        title="Đăng nhập để tham gia Không gian"
+                      >
                         <Plus className="w-3 h-3 stroke-[2.5]" />
                         <span>Tham gia</span>
-                      </>
+                      </Link>
                     )}
-                  </button>
-                )}
-              </div>
-            ))}
+                  </div>
+
+                  {/* Visual Craft Proof: Sample Drops Micro-Strip */}
+                  {hasSamples && (
+                    <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+                      {space.sampleDrops.slice(0, 3).map((sample) => (
+                        <Link
+                          key={sample.id}
+                          href={`/drop/${sample.id}`}
+                          onClick={(e) => {
+                            if (hasDragged) {
+                              e.preventDefault();
+                            }
+                          }}
+                          className="relative aspect-4/3 rounded-lg overflow-hidden bg-secondary/50 ring-1 ring-border/40 hover:opacity-90 transition-opacity"
+                          title={sample.title}
+                        >
+                          <img
+                            src={sample.mediaUrl}
+                            alt={sample.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Thanh kéo điều hướng trực quan duy nhất (Single Interactive Drag Bar) */}
@@ -424,7 +492,7 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
 
       {/* SECTION 2: Visual Drops Feed */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
               <Layers className="w-4 h-4 text-indigo-500" />
@@ -434,15 +502,44 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
                   : 'Nguồn cảm hứng thị giác gần đây'}
               </span>
             </h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {activeFilter === 'joined'
                 ? 'Cập nhật liên tục từ những cộng đồng bạn quan tâm'
                 : 'Mỗi tác phẩm đều đi kèm lý do được gợi ý tới bảng tin của bạn'}
             </p>
           </div>
-          <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
-            {displayedDrops.length} tác phẩm
-          </span>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Sort Toggle: Tuyển chọn vs Mới nhất */}
+            <div className="inline-flex items-center p-0.5 rounded-full bg-secondary/80 border border-border/60 text-xs">
+              <button
+                type="button"
+                onClick={() => setSortOrder('curated')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  sortOrder === 'curated'
+                    ? 'bg-foreground text-background shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Tuyển chọn
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortOrder('latest')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  sortOrder === 'latest'
+                    ? 'bg-foreground text-background shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Mới nhất
+              </button>
+            </div>
+
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-muted-foreground border border-border/60 hidden sm:inline-block">
+              {displayedDrops.length} tác phẩm
+            </span>
+          </div>
         </div>
 
         {displayedDrops.length === 0 ? (
