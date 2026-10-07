@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { MessageSquare, Send, Loader2, ChevronDown } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { MessageSquare, Send, Loader2, ChevronDown, Check } from 'lucide-react';
 import {
   CommentWithReplies,
   CommentSortBy,
@@ -17,6 +17,28 @@ import { DeleteCommentModal, DeleteCommentTarget } from './DeleteCommentModal';
 import { useRealtimeComments } from '@/hooks/useRealtimeComments';
 import { toast } from 'sonner';
 
+const SORT_OPTIONS: {
+  key: CommentSortBy;
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: 'relevant',
+    label: 'Phù hợp nhất',
+    description: 'Hiển thị bình luận có nhiều tương tác và phản hồi nhất.',
+  },
+  {
+    key: 'newest',
+    label: 'Mới nhất',
+    description: 'Hiển thị bình luận mới nhất trước.',
+  },
+  {
+    key: 'oldest',
+    label: 'Tất cả bình luận (Cũ nhất)',
+    description: 'Hiển thị tất cả bình luận theo thứ tự thời gian gốc.',
+  },
+];
+
 interface CommentThreadProps {
   dropId?: string;
   spaceId?: string;
@@ -24,6 +46,7 @@ interface CommentThreadProps {
   initialHasMore?: boolean;
   initialNextCursor?: string | null;
   currentUserId?: string;
+  currentUsername?: string;
   currentAvatarUrl?: string | null;
   onCommentsCountChange?: (count: number) => void;
   title?: string;
@@ -37,6 +60,7 @@ export function CommentThread({
   initialHasMore = false,
   initialNextCursor = null,
   currentUserId,
+  currentUsername,
   currentAvatarUrl,
   onCommentsCountChange,
   title = 'Bình luận & Thảo luận',
@@ -46,9 +70,26 @@ export function CommentThread({
   const [newContent, setNewContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Sorting state
+  // Sorting state & Facebook-style Dropdown
   const [sortBy, setSortBy] = useState<CommentSortBy>('relevant');
   const [isSorting, setIsSorting] = useState(false);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close sorting dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
+        setIsSortDropdownOpen(false);
+      }
+    };
+    if (isSortDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSortDropdownOpen]);
 
   // Pagination state
   const [hasMore, setHasMore] = useState(initialHasMore || initialComments.length >= 10);
@@ -611,29 +652,68 @@ export function CommentThread({
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Sorting Selector Tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-border/40 text-[11px]">
-            {(
-              [
-                { key: 'relevant', label: 'Phù hợp nhất' },
-                { key: 'newest', label: 'Mới nhất' },
-                { key: 'oldest', label: 'Cũ nhất' },
-              ] as const
-            ).map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => handleSortChange(item.key)}
-                disabled={isSorting}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-                  sortBy === item.key
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-foreground shadow-2xs font-semibold'
-                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+          {/* Facebook-style Sort Dropdown */}
+          <div ref={sortDropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+              disabled={isSorting}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-100 hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200/60 dark:border-border/60 transition-colors cursor-pointer select-none"
+              aria-expanded={isSortDropdownOpen}
+              aria-haspopup="listbox"
+              title="Thay đổi cách sắp xếp bình luận"
+            >
+              <span>{SORT_OPTIONS.find((opt) => opt.key === sortBy)?.label || 'Phù hợp nhất'}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${
+                  isSortDropdownOpen ? 'rotate-180 text-zinc-700 dark:text-zinc-200' : ''
                 }`}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isSortDropdownOpen && (
+              <div
+                role="listbox"
+                className="absolute right-0 mt-1.5 w-64 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-border/80 shadow-xl p-1.5 z-30 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md"
               >
-                {item.label}
-              </button>
-            ))}
+                <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-muted-foreground border-b border-zinc-100 dark:border-border/50 mb-1">
+                  Sắp xếp bình luận
+                </div>
+                {SORT_OPTIONS.map((opt) => {
+                  const isSelected = sortBy === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => {
+                        handleSortChange(opt.key);
+                        setIsSortDropdownOpen(false);
+                      }}
+                      className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 cursor-pointer ${
+                        isSelected
+                          ? 'bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-900 dark:text-foreground font-semibold'
+                          : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300'
+                      }`}
+                    >
+                      <div className="mt-0.5 w-4 h-4 shrink-0 flex items-center justify-center">
+                        {isSelected && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-zinc-900 dark:text-foreground">
+                          {opt.label}
+                        </div>
+                        <div className="text-[11px] text-zinc-500 dark:text-muted-foreground font-normal leading-tight mt-0.5">
+                          {opt.description}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-secondary text-zinc-600 dark:text-muted-foreground shrink-0">
@@ -711,6 +791,7 @@ export function CommentThread({
                 key={comment.id}
                 comment={comment}
                 currentUserId={currentUserId}
+                currentUserUsername={currentUsername}
                 onReply={handleReply}
                 onEdit={handleEdit}
                 onDeleteRequest={(target) => setDeleteTarget(target)}

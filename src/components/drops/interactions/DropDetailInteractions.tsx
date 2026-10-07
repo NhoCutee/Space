@@ -79,6 +79,7 @@ export function DropDetailInteractions({
           dropId={dropId}
           initialComments={initialComments}
           currentUserId={currentUser?.id}
+          currentUsername={currentUser?.username}
           currentAvatarUrl={currentUser?.avatarUrl}
           onCommentsCountChange={setCommentsCount}
         />

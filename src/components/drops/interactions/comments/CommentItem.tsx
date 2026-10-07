@@ -20,6 +20,7 @@ import { DeleteCommentTarget } from './DeleteCommentModal';
 interface CommentItemProps {
   comment: CommentWithReplies;
   currentUserId?: string;
+  currentUserUsername?: string;
   onReply: (parentId: string, content: string, replyToUsername?: string) => Promise<boolean>;
   onEdit: (commentId: string, content: string) => Promise<boolean>;
   onDeleteRequest: (target: DeleteCommentTarget) => void;
@@ -59,6 +60,7 @@ function FormattedCommentContent({ content }: { content: string }) {
 export function CommentItem({
   comment,
   currentUserId,
+  currentUserUsername,
   onReply,
   onEdit,
   onDeleteRequest,
@@ -85,6 +87,15 @@ export function CommentItem({
   const isDeleted = Boolean(comment.deletedAt);
   const hasReacted = comment.userReaction === 'HEART';
 
+  // Check if target user is the currently logged in user
+  const isTargetSelf = (target: { id?: string; username: string }) => {
+    if (currentUserId && target.id && target.id === currentUserId) return true;
+    if (currentUserUsername && target.username.toLowerCase() === currentUserUsername.toLowerCase()) return true;
+    return false;
+  };
+
+  const isReplyingToSelf = replyTargetUser ? isTargetSelf(replyTargetUser) : false;
+
   const handleSaveEdit = async () => {
     const trimmed = editContent.trim();
     if (!trimmed || savingEdit) return;
@@ -107,11 +118,11 @@ export function CommentItem({
     const trimmed = replyContent.trim();
     if (!trimmed || submittingReply) return;
 
-    // If replying to a specific user other than root author, prefix mention if not present
+    // When replying to another account, automatically attach @mention if not already typed
     let finalContent = trimmed;
-    if (replyTargetUser && replyTargetUser.username !== comment.user.username) {
+    if (replyTargetUser && !isTargetSelf(replyTargetUser)) {
       const mentionPrefix = `@${replyTargetUser.username} `;
-      if (!finalContent.startsWith(mentionPrefix)) {
+      if (!finalContent.startsWith(mentionPrefix) && !finalContent.includes(`@${replyTargetUser.username}`)) {
         finalContent = `${mentionPrefix}${finalContent}`;
       }
     }
@@ -141,9 +152,20 @@ export function CommentItem({
     }
   };
 
-  const handleStartReply = (targetUser?: { displayName: string; username: string }) => {
-    setReplyTargetUser(targetUser || { displayName: comment.user.displayName, username: comment.user.username });
+  const handleStartReply = (targetUser?: { id?: string; displayName: string; username: string }) => {
+    const target = targetUser || {
+      id: comment.user.id,
+      displayName: comment.user.displayName,
+      username: comment.user.username,
+    };
+    setReplyTargetUser(target);
     setIsReplying(true);
+
+    if (!isTargetSelf(target)) {
+      setReplyContent(`@${target.username} `);
+    } else {
+      setReplyContent('');
+    }
   };
 
   const totalLoadedReplies = comment.replies?.length || 0;
@@ -342,16 +364,22 @@ export function CommentItem({
           {/* Inline Reply Form */}
           {isReplying && (
             <div className="mt-2.5 space-y-1.5 animate-in fade-in duration-150">
-              {replyTargetUser && replyTargetUser.username !== comment.user.username && (
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-[10px] text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+              {replyTargetUser && !isReplyingToSelf && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-[11px] text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40 font-medium">
                   <span>Đang trả lời <strong>@{replyTargetUser.username}</strong></span>
                   <button
                     type="button"
-                    onClick={() => setReplyTargetUser({ displayName: comment.user.displayName, username: comment.user.username })}
+                    onClick={() => {
+                      const prevUser = replyTargetUser;
+                      setReplyTargetUser(null);
+                      if (prevUser && replyContent.startsWith(`@${prevUser.username} `)) {
+                        setReplyContent(replyContent.slice(prevUser.username.length + 2));
+                      }
+                    }}
                     className="text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-200 ml-1 cursor-pointer"
                     title="Hủy gắn thẻ trả lời"
                   >
-                    <X className="w-2.5 h-2.5" />
+                    <X className="w-3 h-3" />
                   </button>
                 </div>
               )}
@@ -363,9 +391,9 @@ export function CommentItem({
                     required
                     autoFocus
                     placeholder={
-                      replyTargetUser
+                      replyTargetUser && !isReplyingToSelf
                         ? `Trả lời @${replyTargetUser.username}...`
-                        : `Trả lời @${comment.user.username}...`
+                        : `Viết câu trả lời...`
                     }
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}

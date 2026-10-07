@@ -62,6 +62,7 @@ export function SpaceCommentsSection({
         spaceId={spaceId}
         initialComments={initialComments}
         currentUserId={currentUser?.id}
+        currentUsername={currentUser?.username}
         currentAvatarUrl={currentUser?.avatarUrl}
         onCommentsCountChange={setCommentsCount}
         title="Bình luận không gian"
