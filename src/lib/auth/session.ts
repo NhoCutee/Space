@@ -4,6 +4,7 @@ import { Session, User } from '@prisma/client';
 import { signAccessToken } from './jwt';
 
 const REFRESH_TOKEN_LIFETIME_DAYS = 30;
+const REUSE_GRACE_MS = 10_000;
 
 export interface SessionWithUser extends Session {
   user: User;
@@ -71,6 +72,25 @@ export async function getActiveSession(sessionId: string): Promise<SessionWithUs
 }
 
 /**
+ * Validates a refresh token WITHOUT rotating it. Used where cookies cannot be
+ * written (Server Component rendering), so rotating there would lose the new token.
+ */
+export async function getSessionByRefreshToken(
+  rawRefreshToken: string
+): Promise<SessionWithUser | null> {
+  if (!rawRefreshToken || typeof rawRefreshToken !== 'string') return null;
+
+  const session = await prisma.session.findUnique({
+    where: { hashedRefreshToken: hashToken(rawRefreshToken) },
+    include: { user: true },
+  });
+
+  if (!session || session.revokedAt) return null;
+  if (session.expiresAt.getTime() <= Date.now()) return null;
+  return session;
+}
+
+/**
  * Rotates a refresh token:
  * Validates the old refresh token, revokes the old session,
  * creates a new session, and detects token reuse attacks.
@@ -95,6 +115,11 @@ export async function rotateSession(
   // Token reuse detection: if a revoked session's token is presented again,
   // revoke ALL sessions for that user immediately to protect the compromised account.
   if (existingSession.revokedAt) {
+    // Grace window: concurrent requests carrying the same just-rotated token are a
+    // benign race, not an attack. Reject without revoking the user's other sessions.
+    if (Date.now() - existingSession.revokedAt.getTime() < REUSE_GRACE_MS) {
+      return null;
+    }
     const { logSecurityEvent } = await import('@/lib/security/logger');
     logSecurityEvent({
       event: 'AUTH_SESSION_REUSE_DETECTED',

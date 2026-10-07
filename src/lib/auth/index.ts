@@ -1,9 +1,11 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { verifyAccessToken } from './jwt';
 import {
   createSession,
   getActiveSession,
+  getSessionByRefreshToken,
   rotateSession,
   revokeSession,
   hashToken,
@@ -11,6 +13,7 @@ import {
 import {
   COOKIE_ACCESS_TOKEN,
   COOKIE_REFRESH_TOKEN,
+  getBaseCookieOptions,
   setAuthCookies,
   clearAuthCookies,
 } from './cookies';
@@ -42,7 +45,7 @@ export interface AuthUser {
  * 2. If access token is missing or expired, attempts secure refresh token rotation.
  * 3. Returns null if unauthenticated. Never falls back to a mock user.
  */
-export async function getCurrentUser(): Promise<AuthUser | null> {
+async function resolveCurrentUser(): Promise<AuthUser | null> {
   let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null;
   try {
     cookieStore = await cookies();
@@ -73,9 +76,39 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     }
   }
 
-  // 2. Try Refresh Token Rotation if Access Token is expired or missing
+  // 2. Refresh token path if Access Token is expired or missing
   if (refreshToken) {
+    // Probe whether cookies are writable (Server Actions / Route Handlers) or
+    // read-only (Server Component render). Rotating in a read-only context would
+    // revoke the old token while the browser never receives the new one, which then
+    // looks like token reuse on the next request and logs the user out.
+    let writable = true;
     try {
+      cookieStore.set(COOKIE_REFRESH_TOKEN, refreshToken, {
+        ...getBaseCookieOptions(),
+        maxAge: 30 * 24 * 60 * 60,
+      });
+    } catch {
+      writable = false;
+    }
+
+    try {
+      if (!writable) {
+        const active = await getSessionByRefreshToken(refreshToken);
+        if (active) {
+          return {
+            id: active.user.id,
+            username: active.user.username,
+            displayName: active.user.displayName,
+            avatarUrl: active.user.avatarUrl,
+            bio: active.user.bio,
+            interests: JSON.parse(active.user.interests || '[]'),
+            role: active.user.role,
+          };
+        }
+        return null;
+      }
+
       const rotated = await rotateSession(refreshToken);
       if (rotated) {
         setAuthCookies(cookieStore, rotated.accessToken, rotated.rawRefreshToken);
@@ -100,6 +133,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   // 3. Strictly unauthenticated
   return null;
 }
+
+/** Deduplicated per request so layout + page share one resolution (no rotation races). */
+export const getCurrentUser = cache(resolveCurrentUser);
 
 /**
  * Creates a real database-backed authenticated session and sets secure cookies.

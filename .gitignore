@@ -12,3 +12,5 @@ out
 public/uploads/*
 !public/uploads/.gitkeep
 .impeccable
+.agents
+.agent
