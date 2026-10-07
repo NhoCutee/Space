@@ -127,13 +127,19 @@ export function SpaceMasthead({ space, initialJoined, userRole }: SpaceMastheadP
             {space.members && space.members.length > 0 && (
               <div className="flex items-center -space-x-2 overflow-hidden ml-1">
                 {space.members.slice(0, 4).map((m, i) => (
-                  <img
+                  <Link
                     key={i}
-                    src={m.user.avatarUrl || 'https://api.dicebear.com/7.x/shapes/svg?seed=user'}
-                    alt={m.user.displayName}
-                    className="inline-block h-6 w-6 rounded-full ring-2 ring-background object-cover"
-                    title={m.user.displayName}
-                  />
+                    href={`/u/${encodeURIComponent(m.user.username)}`}
+                    title={`${m.user.displayName} (@${m.user.username})`}
+                    aria-label={`Hồ sơ của ${m.user.displayName}`}
+                    className="inline-block transition-transform hover:scale-110 hover:z-20 focus:outline-none focus:ring-2 focus:ring-primary rounded-full"
+                  >
+                    <img
+                      src={m.user.avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(m.user.username)}`}
+                      alt={m.user.displayName}
+                      className="inline-block h-6 w-6 rounded-full ring-2 ring-background object-cover"
+                    />
+                  </Link>
                 ))}
               </div>
             )}

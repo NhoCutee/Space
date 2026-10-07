@@ -31,9 +31,9 @@ setInterval(() => {
 }, 5 * 60 * 1000).unref();
 
 export const RATE_LIMIT_PRESETS = {
-  // Strictest: 5 attempts per 15 minutes (Brute-force defense for login & registration)
+  // Auth attempts (Brute-force defense for login & registration)
   AUTH: {
-    maxRequests: 5,
+    maxRequests: process.env.NODE_ENV === 'production' ? 15 : 50,
     windowSeconds: 15 * 60,
   },
   // Upload: 10 uploads per minute per user/IP

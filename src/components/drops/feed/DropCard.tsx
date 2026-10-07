@@ -6,6 +6,7 @@ import { MapPin, Cpu, ImageOff, MessageSquare, Bookmark } from 'lucide-react';
 import { timeAgo } from '@/lib/utils';
 import { ReactionButton } from '../interactions/ReactionButton';
 import { SaveToCollectionModal } from '../interactions/SaveToCollectionModal';
+import { UserIdentity } from '@/components/user';
 
 export interface DropCardProps {
   drop: {
@@ -62,10 +63,11 @@ export function DropCard({ drop, showSpaceBadge = false }: DropCardProps) {
 
   return (
     <>
-      <article className="break-inside-avoid mb-4 sm:mb-6 group">
+      <article className="break-inside-avoid mb-4 sm:mb-6 group rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-border/80 bg-white dark:bg-card hover:border-zinc-400 dark:hover:border-foreground/30 transition-all duration-300 shadow-xs hover:shadow-lg flex flex-col justify-between">
+        {/* Clickable Drop media and title */}
         <Link
           href={`/drop/${drop.id}`}
-          className="block rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-border/80 bg-white dark:bg-card hover:border-zinc-400 dark:hover:border-foreground/30 transition-all duration-300 shadow-xs hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-foreground/20"
+          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
         >
           {/* Media Container preserving exact aspect ratio */}
           <div
@@ -105,7 +107,7 @@ export function DropCard({ drop, showSpaceBadge = false }: DropCardProps) {
           </div>
 
           {/* Card Body */}
-          <div className="p-3.5 sm:p-4">
+          <div className="p-3.5 sm:p-4 pb-0 sm:pb-0">
             <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
               {drop.title}
             </h3>
@@ -119,68 +121,67 @@ export function DropCard({ drop, showSpaceBadge = false }: DropCardProps) {
                 </span>
               </div>
             )}
-
-            {/* Creator info & Location row */}
-            <div className="mt-3 pt-2.5 border-t border-zinc-100 dark:border-border/50 flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 min-w-0">
-                <img
-                  src={drop.user.avatarUrl || 'https://api.dicebear.com/7.x/shapes/svg?seed=user'}
-                  alt={drop.user.displayName}
-                  className="w-5 h-5 rounded-full object-cover shrink-0 ring-1 ring-border"
-                />
-                <span className="font-semibold text-zinc-900 dark:text-foreground truncate text-xs">
-                  {drop.user.displayName}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0 text-[11px]">
-                {drop.locationName && (
-                  <span className="hidden sm:inline-flex items-center gap-0.5 text-muted-foreground truncate max-w-[90px]">
-                    <MapPin className="w-3 h-3 shrink-0" />
-                    <span className="truncate">{drop.locationName.split(',')[0]}</span>
-                  </span>
-                )}
-                <span>{timeAgo(drop.createdAt)}</span>
-              </div>
-            </div>
-
-            {/* Social Interactions Action Bar */}
-            <div className="mt-2.5 pt-2 border-t border-zinc-100/80 dark:border-border/40 flex items-center justify-between">
-              {/* Left: Reaction */}
-              <ReactionButton
-                dropId={drop.id}
-                initialCount={drop.reactionsCount || 0}
-                initialReacted={drop.userReacted || false}
-                size="sm"
-              />
-
-              {/* Right: Comments Count & Save Button */}
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-zinc-500 dark:text-muted-foreground rounded-full hover:bg-zinc-100 dark:hover:bg-secondary/50 transition-colors"
-                  title={`${drop.commentsCount || 0} comments`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>{drop.commentsCount || 0}</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsSaveModalOpen(true);
-                  }}
-                  title="Save to Collection"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 dark:text-foreground bg-zinc-100 hover:bg-zinc-200/80 dark:bg-secondary/70 dark:hover:bg-secondary rounded-full border border-zinc-200/60 dark:border-border/60 transition-all cursor-pointer active:scale-95"
-                >
-                  <Bookmark className="w-3.5 h-3.5" />
-                  <span>{savesCount}</span>
-                </button>
-              </div>
-            </div>
           </div>
         </Link>
+
+        {/* Card Footer: Creator info, Location & Actions */}
+        <div className="p-3.5 sm:p-4 pt-2">
+          {/* Creator info & Location row */}
+          <div className="mt-2 pt-2.5 border-t border-zinc-100 dark:border-border/50 flex items-center justify-between text-xs text-muted-foreground">
+            <UserIdentity
+              user={drop.user}
+              variant="compact"
+              size="xs"
+              className="min-w-0 max-w-[65%]"
+            />
+
+            <div className="flex items-center gap-2 shrink-0 text-[11px]">
+              {drop.locationName && (
+                <span className="hidden sm:inline-flex items-center gap-0.5 text-muted-foreground truncate max-w-[90px]">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{drop.locationName.split(',')[0]}</span>
+                </span>
+              )}
+              <span>{timeAgo(drop.createdAt)}</span>
+            </div>
+          </div>
+
+          {/* Social Interactions Action Bar */}
+          <div className="mt-2.5 pt-2 border-t border-zinc-100/80 dark:border-border/40 flex items-center justify-between">
+            {/* Left: Reaction */}
+            <ReactionButton
+              dropId={drop.id}
+              initialCount={drop.reactionsCount || 0}
+              initialReacted={drop.userReacted || false}
+              size="sm"
+            />
+
+            {/* Right: Comments Count & Save Button */}
+            <div className="flex items-center gap-1.5">
+              <div
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-zinc-500 dark:text-muted-foreground rounded-full hover:bg-zinc-100 dark:hover:bg-secondary/50 transition-colors"
+                title={`${drop.commentsCount || 0} bình luận`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>{drop.commentsCount || 0}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsSaveModalOpen(true);
+                }}
+                title="Lưu vào Bộ sưu tập"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 dark:text-foreground bg-zinc-100 hover:bg-zinc-200/80 dark:bg-secondary/70 dark:hover:bg-secondary rounded-full border border-zinc-200/60 dark:border-border/60 transition-all cursor-pointer active:scale-95"
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>{savesCount}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </article>
 
       {/* Save Modal */}

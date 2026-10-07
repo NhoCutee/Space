@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { DropDetailInteractions, DropCanvasViewer } from '@/components/drops';
 import { RelativeTime } from '@/components/ui/RelativeTime';
+import { UserIdentity } from '@/components/user';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,20 +123,12 @@ export default async function DropDetailPage({ params }: DropPageProps) {
             </h1>
 
             {/* Author Studio Profile */}
-            <div className="pt-3 border-t border-border/50 flex items-center gap-3">
-              <img
-                src={drop.user.avatarUrl || 'https://api.dicebear.com/7.x/shapes/svg?seed=user'}
-                alt={drop.user.displayName}
-                className="w-10 h-10 rounded-full object-cover ring-1 ring-border shrink-0"
+            <div className="pt-3 border-t border-border/50">
+              <UserIdentity
+                user={drop.user}
+                variant="full"
+                size="md"
               />
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-foreground truncate">
-                  {drop.user.displayName}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  @{drop.user.username}
-                </div>
-              </div>
             </div>
 
             {/* Location & Time Metadata */}

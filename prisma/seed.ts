@@ -18,7 +18,7 @@ async function main() {
   await prisma.user.deleteMany();
 
   // Pre-hashed bcrypt string for 'SpacesPassword2026!' (cost 12)
-  const defaultPasswordHash = '$2b$12$Nq9v7.E5u7YqV81u0.5g/Onv6V.sX3/g1iK7Cj4X3z1Jt.JzQdIeq';
+  const defaultPasswordHash = '$2b$12$DEGbXZkDiKzN8SXmsV73ee27x.jJNn4wy/5XB1JlZ2a8FAC84tu/y';
 
   // 1. Create Users
   const maya = await prisma.user.create({

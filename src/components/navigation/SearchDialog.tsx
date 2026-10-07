@@ -117,7 +117,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
           id: `user-${u.id}`,
           title: u.displayName,
           subtitle: `@${u.username}${u.bio ? ` • ${u.bio}` : ''}`,
-          url: `/explore?q=${encodeURIComponent(u.username)}`,
+          url: `/u/${encodeURIComponent(u.username)}`,
           image: u.avatarUrl,
         });
       });

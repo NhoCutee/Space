@@ -5,6 +5,7 @@ import { ArrowLeft, Lock, Globe, Layers } from 'lucide-react';
 import { CollectionDetailActions } from '@/components/collections/CollectionDetailActions';
 import { RemoveFromCollectionButton } from '@/components/collections/RemoveFromCollectionButton';
 import { DropCard } from '@/components/drops';
+import { UserIdentity } from '@/components/user';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,12 +72,12 @@ export default async function CollectionDetailPage({ params }: CollectionPagePro
 
             {/* Creator info */}
             <div className="pt-2 flex items-center gap-2 text-xs text-zinc-500 dark:text-muted-foreground">
-              <img
-                src={collection.user.avatarUrl || 'https://api.dicebear.com/7.x/shapes/svg?seed=user'}
-                alt={collection.user.displayName}
-                className="w-5 h-5 rounded-full object-cover shrink-0 ring-1 ring-border"
+              <span>Biên tuyển bởi</span>
+              <UserIdentity
+                user={collection.user}
+                variant="compact"
+                size="sm"
               />
-              <span>Curated by <strong className="text-zinc-900 dark:text-foreground">{collection.user.displayName}</strong> (@{collection.user.username})</span>
             </div>
           </div>
 

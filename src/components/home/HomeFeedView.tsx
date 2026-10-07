@@ -19,6 +19,7 @@ import { ExplainableBadge } from './ExplainableBadge';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toggleSpaceMembership } from '@/actions/spaces';
 import { SaveToCollectionModal } from '@/components/drops/interactions/SaveToCollectionModal';
+import { UserIdentity } from '@/components/user';
 import { toast } from 'sonner';
 
 interface HomeFeedViewProps {
@@ -391,16 +392,12 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
 
                     {/* Author Info & Single Truth Timestamp */}
                     <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground mt-auto">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <img
-                          src={drop.user.avatarUrl || 'https://api.dicebear.com/7.x/shapes/svg?seed=user'}
-                          alt={drop.user.displayName}
-                          className="w-4 h-4 rounded-full object-cover shrink-0 ring-1 ring-border"
-                        />
-                        <span className="truncate text-xs font-medium text-foreground">
-                          {drop.user.displayName}
-                        </span>
-                      </div>
+                      <UserIdentity
+                        user={drop.user}
+                        variant="compact"
+                        size="xs"
+                        className="min-w-0 max-w-[65%]"
+                      />
 
                       <RelativeTime createdAt={drop.createdAt} className="shrink-0 text-xs text-muted-foreground/75" />
                     </div>

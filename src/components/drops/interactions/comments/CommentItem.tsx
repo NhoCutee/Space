@@ -187,7 +187,7 @@ export function CommentItem({
             title={`Hồ sơ của ${comment.user.displayName}`}
           >
             <img
-              src={comment.user.avatarUrl || 'https://api.dicebear.com/7.x/shapes/svg?seed=user'}
+              src={comment.user.avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(comment.user.username)}`}
               alt={comment.user.displayName}
               className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-border mt-0.5"
             />
@@ -525,7 +525,7 @@ function ReplyItem({
           title={`Hồ sơ của ${reply.user.displayName}`}
         >
           <img
-            src={reply.user.avatarUrl || 'https://api.dicebear.com/7.x/shapes/svg?seed=user'}
+            src={reply.user.avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(reply.user.username)}`}
             alt={reply.user.displayName}
             className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-border mt-0.5"
           />
