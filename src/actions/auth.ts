@@ -3,7 +3,6 @@
 import { prisma } from '@/lib/prisma';
 import {
   getCurrentUser,
-  setCurrentUser,
   clearCurrentUser,
   loginWithCredentials,
   registerWithCredentials,
@@ -17,26 +16,6 @@ import {
 } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-
-/**
- * Development-only persona switcher.
- * STRICTLY disabled in production mode.
- */
-export async function switchPersona(username: string) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Unauthorized: Persona switching is strictly prohibited in production.');
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { username },
-  });
-
-  if (!user) throw new Error('User not found');
-
-  await setCurrentUser(user.id);
-  revalidatePath('/');
-  return { success: true, user };
-}
 
 /**
  * Production login action with brute-force rate limiting.
@@ -56,7 +35,9 @@ export async function loginAction(identifier: string, password: string) {
 
   const result = await loginWithCredentials(identifier, password);
   if (result.success) {
-    revalidatePath('/');
+    try {
+      revalidatePath('/');
+    } catch {}
   }
   return result;
 }
@@ -85,7 +66,9 @@ export async function registerAction(params: {
 
   const result = await registerWithCredentials(params);
   if (result.success) {
-    revalidatePath('/');
+    try {
+      revalidatePath('/');
+    } catch {}
   }
   return result;
 }
@@ -95,7 +78,9 @@ export async function registerAction(params: {
  */
 export async function logoutAction() {
   await clearCurrentUser();
-  revalidatePath('/');
+  try {
+    revalidatePath('/');
+  } catch {}
   return { success: true };
 }
 

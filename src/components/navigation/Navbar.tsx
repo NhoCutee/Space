@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Plus, Search, Layers, Moon, Sun, Sparkles, Compass } from 'lucide-react';
-import { PersonaSwitcher } from './PersonaSwitcher';
+import { UserMenu } from './UserMenu';
 import { SearchDialog } from './SearchDialog';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
@@ -13,6 +13,7 @@ interface NavbarProps {
     username: string;
     displayName: string;
     avatarUrl: string | null;
+    role?: string;
   } | null;
   onOpenSearch?: () => void;
 }
@@ -149,13 +150,16 @@ export function Navbar({ user, onOpenSearch }: NavbarProps) {
               <span>Tạo mới</span>
             </Link>
 
-            {/* Persona Switcher for pair-testing */}
-            {user && (
-              <PersonaSwitcher
-                currentUsername={user.username}
-                currentDisplayName={user.displayName}
-                currentAvatar={user.avatarUrl}
-              />
+            {/* Authenticated user menu dropdown, otherwise Login link */}
+            {user ? (
+              <UserMenu user={user} />
+            ) : (
+              <Link
+                href="/login"
+                className="text-xs font-semibold px-3 py-1.5 rounded-full border border-border/80 hover:bg-secondary text-foreground transition-all active:scale-95 cursor-pointer shadow-2xs"
+              >
+                Đăng nhập
+              </Link>
             )}
           </div>
         </div>

@@ -27,25 +27,33 @@ export function setAuthCookies(
   accessToken: string,
   refreshToken: string
 ) {
-  const baseOptions = getBaseCookieOptions();
+  try {
+    const baseOptions = getBaseCookieOptions();
 
-  cookieStore.set(COOKIE_ACCESS_TOKEN, accessToken, {
-    ...baseOptions,
-    maxAge: 15 * 60, // 15 minutes
-  });
+    cookieStore.set(COOKIE_ACCESS_TOKEN, accessToken, {
+      ...baseOptions,
+      maxAge: 15 * 60, // 15 minutes
+    });
 
-  cookieStore.set(COOKIE_REFRESH_TOKEN, refreshToken, {
-    ...baseOptions,
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  });
+    cookieStore.set(COOKIE_REFRESH_TOKEN, refreshToken, {
+      ...baseOptions,
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+  } catch {
+    // Read-only cookie store in Server Component rendering
+  }
 }
 
 /**
  * Clears all authentication cookies.
  */
 export function clearAuthCookies(cookieStore: CookieStoreWriter) {
-  cookieStore.delete(COOKIE_ACCESS_TOKEN);
-  cookieStore.delete(COOKIE_REFRESH_TOKEN);
-  // Also clear legacy cookie if present
-  cookieStore.delete('spaces_user_id');
+  try {
+    cookieStore.delete(COOKIE_ACCESS_TOKEN);
+    cookieStore.delete(COOKIE_REFRESH_TOKEN);
+    // Also clear legacy cookie if present
+    cookieStore.delete('spaces_user_id');
+  } catch {
+    // Read-only cookie store in Server Component rendering
+  }
 }

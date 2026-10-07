@@ -91,8 +91,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       } else {
         clearAuthCookies(cookieStore);
       }
-    } catch (err) {
-      console.error('[Auth] Error during session rotation:', err);
+    } catch {
+      // Rotation failed or expired session
       clearAuthCookies(cookieStore);
     }
   }

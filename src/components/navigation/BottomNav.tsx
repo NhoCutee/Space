@@ -11,6 +11,10 @@ interface BottomNavProps {
 export function BottomNav({ currentUsername }: BottomNavProps) {
   const pathname = usePathname();
 
+  if (pathname === '/login' || pathname === '/register') {
+    return null;
+  }
+
   const links = [
     { href: '/', label: 'Bảng tin', icon: Sparkles },
     { href: '/explore', label: 'Khám phá', icon: Compass },
