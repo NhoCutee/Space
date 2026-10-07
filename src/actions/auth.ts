@@ -14,7 +14,7 @@ import {
   COOKIE_OAUTH_VERIFIER,
   getBaseCookieOptions,
 } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -97,7 +97,17 @@ export async function getOAuthUrlAction(provider: OAuthProvider) {
   cookieStore.set(COOKIE_OAUTH_STATE, state, { ...baseOptions, maxAge: 600 });
   cookieStore.set(COOKIE_OAUTH_VERIFIER, codeVerifier, { ...baseOptions, maxAge: 600 });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const headerStore = await headers();
+  const host = headerStore.get('x-forwarded-host') || headerStore.get('host');
+  const proto = headerStore.get('x-forwarded-proto') || (host && !host.includes('localhost') ? 'https' : 'http');
+  const requestOrigin = host ? `${proto}://${host}` : undefined;
+
+  const appUrl =
+    requestOrigin ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined) ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+    'http://localhost:3000';
   const redirectUri = `${appUrl}/api/auth/callback/${provider}`;
 
   const authUrl = getAuthorizationUrl(provider, redirectUri, state, codeChallenge);

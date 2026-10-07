@@ -18,7 +18,14 @@ export async function GET(
   { params }: { params: Promise<{ provider: string }> }
 ) {
   const { provider } = await params;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  const proto = req.headers.get('x-forwarded-proto') || (host && !host.includes('localhost') ? 'https' : 'http');
+  const appUrl =
+    (host ? `${proto}://${host}` : undefined) ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined) ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+    req.nextUrl.origin;
 
   if (provider !== 'google' && provider !== 'github') {
     return NextResponse.redirect(`${appUrl}/?authError=unsupported_provider`);
