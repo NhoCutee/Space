@@ -12,7 +12,13 @@ interface UseRealtimeCommentsOptions {
   onCommentDeleted?: (
     commentId: string,
     parentId?: string | null,
-    deletedCount?: number
+    deletedCount?: number,
+    isSoftDeleted?: boolean
+  ) => void;
+  onCommentReacted?: (
+    commentId: string,
+    reactionsCount: number,
+    parentId?: string | null
   ) => void;
 }
 
@@ -22,6 +28,7 @@ export function useRealtimeComments({
   onCommentCreated,
   onCommentUpdated,
   onCommentDeleted,
+  onCommentReacted,
 }: UseRealtimeCommentsOptions) {
   const [isConnected, setIsConnected] = useState(false);
 
@@ -34,6 +41,9 @@ export function useRealtimeComments({
 
   const onDeletedRef = useRef(onCommentDeleted);
   onDeletedRef.current = onCommentDeleted;
+
+  const onReactedRef = useRef(onCommentReacted);
+  onReactedRef.current = onCommentReacted;
 
   useEffect(() => {
     if (!spaceId && !dropId) return;
@@ -73,7 +83,14 @@ export function useRealtimeComments({
               onDeletedRef.current?.(
                 data.commentId,
                 data.parentId,
-                data.deletedCount
+                data.deletedCount,
+                data.isSoftDeleted
+              );
+            } else if (data.type === 'reacted' && data.commentId) {
+              onReactedRef.current?.(
+                data.commentId,
+                data.reactionsCount ?? 0,
+                data.parentId
               );
             }
           } catch (err) {

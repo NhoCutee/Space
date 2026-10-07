@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { MessageSquare, Send, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, Loader2, ChevronDown } from 'lucide-react';
 import {
   CommentWithReplies,
+  CommentSortBy,
   createComment,
   deleteComment,
   updateComment,
+  toggleCommentReaction,
+  getThreadedComments,
+  getCommentReplies,
 } from '@/actions/comments';
 import { CommentItem } from './CommentItem';
 import { DeleteCommentModal, DeleteCommentTarget } from './DeleteCommentModal';
@@ -17,6 +21,8 @@ interface CommentThreadProps {
   dropId?: string;
   spaceId?: string;
   initialComments: CommentWithReplies[];
+  initialHasMore?: boolean;
+  initialNextCursor?: string | null;
   currentUserId?: string;
   currentAvatarUrl?: string | null;
   onCommentsCountChange?: (count: number) => void;
@@ -28,6 +34,8 @@ export function CommentThread({
   dropId,
   spaceId,
   initialComments,
+  initialHasMore = false,
+  initialNextCursor = null,
   currentUserId,
   currentAvatarUrl,
   onCommentsCountChange,
@@ -38,13 +46,27 @@ export function CommentThread({
   const [newContent, setNewContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Sorting state
+  const [sortBy, setSortBy] = useState<CommentSortBy>('relevant');
+  const [isSorting, setIsSorting] = useState(false);
+
+  // Pagination state
+  const [hasMore, setHasMore] = useState(initialHasMore || initialComments.length >= 10);
+  const [nextCursor, setNextCursor] = useState<string | null>(
+    initialNextCursor || (initialComments.length > 0 ? initialComments[initialComments.length - 1].id : null)
+  );
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Loading state for on-demand replies per comment
+  const [loadingRepliesId, setLoadingRepliesId] = useState<string | null>(null);
+
   // Custom Delete Modal State
   const [deleteTarget, setDeleteTarget] = useState<DeleteCommentTarget | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Compute total comments including replies
+  // Compute total comments count (top comments + replies)
   const totalComments = comments.reduce(
-    (acc, c) => acc + 1 + (c.replies?.length || 0),
+    (acc, c) => acc + (c.deletedAt ? 0 : 1) + (c.replies?.filter((r) => !r.deletedAt).length || 0),
     0
   );
 
@@ -56,7 +78,6 @@ export function CommentThread({
         if (prev.some((c) => c.id === newComment.id)) {
           return prev;
         }
-        // If it belongs to a space, we list latest first
         return [newComment, ...prev];
       }
 
@@ -69,6 +90,7 @@ export function CommentThread({
           }
           return {
             ...c,
+            repliesCount: (c.repliesCount || replies.length) + 1,
             replies: [...replies, newComment],
           };
         }
@@ -86,6 +108,7 @@ export function CommentThread({
           return {
             ...c,
             content: updatedComment.content,
+            isEdited: true,
             updatedAt: updatedComment.updatedAt,
           };
         }
@@ -94,7 +117,7 @@ export function CommentThread({
             ...c,
             replies: c.replies.map((r) =>
               r.id === updatedComment.id
-                ? { ...r, content: updatedComment.content, updatedAt: updatedComment.updatedAt }
+                ? { ...r, content: updatedComment.content, isEdited: true, updatedAt: updatedComment.updatedAt }
                 : r
             ),
           };
@@ -105,20 +128,77 @@ export function CommentThread({
   }, []);
 
   const handleRealtimeDeleted = useCallback(
-    (commentId: string, parentId?: string | null, deletedCount = 1) => {
+    (commentId: string, parentId?: string | null, deletedCount = 1, isSoftDeleted = false) => {
       setComments((prev) => {
         if (!parentId) {
+          if (isSoftDeleted) {
+            return prev.map((c) =>
+              c.id === commentId
+                ? {
+                    ...c,
+                    deletedAt: new Date(),
+                    content: 'Bình luận này đã bị xóa.',
+                  }
+                : c
+            );
+          }
           return prev.filter((c) => c.id !== commentId);
         }
-        return prev.map((c) => ({
-          ...c,
-          replies: c.replies?.filter((r) => r.id !== commentId),
-        }));
+
+        // Inside a reply
+        return prev.map((c) => {
+          if (c.id === parentId && c.replies) {
+            if (isSoftDeleted) {
+              return {
+                ...c,
+                replies: c.replies.map((r) =>
+                  r.id === commentId
+                    ? {
+                        ...r,
+                        deletedAt: new Date(),
+                        content: 'Câu trả lời này đã bị xóa.',
+                      }
+                    : r
+                ),
+              };
+            }
+            return {
+              ...c,
+              repliesCount: Math.max(0, (c.repliesCount || c.replies.length) - 1),
+              replies: c.replies.filter((r) => r.id !== commentId),
+            };
+          }
+          return c;
+        });
       });
 
       onCommentsCountChange?.(Math.max(0, totalComments - deletedCount));
     },
     [totalComments, onCommentsCountChange]
+  );
+
+  const handleRealtimeReacted = useCallback(
+    (commentId: string, reactionsCount: number, parentId?: string | null) => {
+      setComments((prev) => {
+        if (!parentId) {
+          return prev.map((c) =>
+            c.id === commentId ? { ...c, reactionsCount } : c
+          );
+        }
+        return prev.map((c) => {
+          if (c.id === parentId && c.replies) {
+            return {
+              ...c,
+              replies: c.replies.map((r) =>
+                r.id === commentId ? { ...r, reactionsCount } : r
+              ),
+            };
+          }
+          return c;
+        });
+      });
+    },
+    []
   );
 
   const { isConnected } = useRealtimeComments({
@@ -127,8 +207,196 @@ export function CommentThread({
     onCommentCreated: handleRealtimeCreated,
     onCommentUpdated: handleRealtimeUpdated,
     onCommentDeleted: handleRealtimeDeleted,
+    onCommentReacted: handleRealtimeReacted,
   });
 
+  // Sort Handler
+  const handleSortChange = async (newSort: CommentSortBy) => {
+    if (newSort === sortBy || isSorting) return;
+    setSortBy(newSort);
+    setIsSorting(true);
+
+    try {
+      const res = await getThreadedComments({
+        spaceId,
+        dropId,
+        sortBy: newSort,
+        limit: 10,
+      });
+
+      setComments(res.comments);
+      setHasMore(res.hasMore);
+      setNextCursor(res.nextCursor);
+    } catch {
+      toast.error('Không thể tải danh sách bình luận');
+    } finally {
+      setIsSorting(false);
+    }
+  };
+
+  // Pagination Load More Handler
+  const handleLoadMoreComments = async () => {
+    if (loadingMore || !hasMore || !nextCursor) return;
+    setLoadingMore(true);
+
+    try {
+      const res = await getThreadedComments({
+        spaceId,
+        dropId,
+        sortBy,
+        cursor: nextCursor,
+        limit: 10,
+      });
+
+      setComments((prev) => {
+        const existingIds = new Set(prev.map((c) => c.id));
+        const uniqueNew = res.comments.filter((c) => !existingIds.has(c.id));
+        return [...prev, ...uniqueNew];
+      });
+      setHasMore(res.hasMore);
+      setNextCursor(res.nextCursor);
+    } catch {
+      toast.error('Không thể tải thêm bình luận');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // On-demand load more replies for a top comment
+  const handleLoadMoreReplies = async (parentId: string) => {
+    const parent = comments.find((c) => c.id === parentId);
+    if (!parent || loadingRepliesId) return;
+
+    setLoadingRepliesId(parentId);
+    try {
+      const skip = parent.replies?.length || 0;
+      const res = await getCommentReplies(parentId, { skip, take: 5 });
+
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === parentId) {
+            const currentReplies = c.replies || [];
+            const existingIds = new Set(currentReplies.map((r) => r.id));
+            const newReplies = res.replies.filter((r) => !existingIds.has(r.id));
+            return {
+              ...c,
+              repliesCount: res.totalReplies,
+              hasMoreReplies: res.hasMore,
+              replies: [...currentReplies, ...newReplies],
+            };
+          }
+          return c;
+        })
+      );
+    } catch {
+      toast.error('Không thể tải thêm câu trả lời');
+    } finally {
+      setLoadingRepliesId(null);
+    }
+  };
+
+  // Toggle Reaction Handler with Optimistic UI
+  const handleToggleReaction = async (commentId: string, parentId?: string | null) => {
+    if (!currentUserId) {
+      toast.error('Bạn cần đăng nhập để thả tim bình luận');
+      return;
+    }
+
+    // Locate comment or reply
+    let wasReacted = false;
+    let originalCount = 0;
+
+    if (!parentId) {
+      const c = comments.find((item) => item.id === commentId);
+      if (!c) return;
+      wasReacted = c.userReaction === 'HEART';
+      originalCount = c.reactionsCount;
+    } else {
+      const parent = comments.find((item) => item.id === parentId);
+      const reply = parent?.replies?.find((r) => r.id === commentId);
+      if (!reply) return;
+      wasReacted = reply.userReaction === 'HEART';
+      originalCount = reply.reactionsCount;
+    }
+
+    const nextReacted = !wasReacted;
+    const nextCount = nextReacted ? originalCount + 1 : Math.max(0, originalCount - 1);
+
+    // Apply Optimistic Update
+    setComments((prev) => {
+      if (!parentId) {
+        return prev.map((c) =>
+          c.id === commentId
+            ? {
+                ...c,
+                reactionsCount: nextCount,
+                userReaction: nextReacted ? 'HEART' : null,
+              }
+            : c
+        );
+      }
+      return prev.map((c) => {
+        if (c.id === parentId && c.replies) {
+          return {
+            ...c,
+            replies: c.replies.map((r) =>
+              r.id === commentId
+                ? {
+                    ...r,
+                    reactionsCount: nextCount,
+                    userReaction: nextReacted ? 'HEART' : null,
+                  }
+                : r
+            ),
+          };
+        }
+        return c;
+      });
+    });
+
+    try {
+      const res = await toggleCommentReaction(commentId, 'HEART');
+      if (!res.success) {
+        // Revert on server error
+        throw new Error(res.error || 'Lỗi thao tác cảm xúc');
+      }
+    } catch {
+      // Revert optimistic update
+      setComments((prev) => {
+        if (!parentId) {
+          return prev.map((c) =>
+            c.id === commentId
+              ? {
+                  ...c,
+                  reactionsCount: originalCount,
+                  userReaction: wasReacted ? 'HEART' : null,
+                }
+              : c
+          );
+        }
+        return prev.map((c) => {
+          if (c.id === parentId && c.replies) {
+            return {
+              ...c,
+              replies: c.replies.map((r) =>
+                r.id === commentId
+                  ? {
+                      ...r,
+                      reactionsCount: originalCount,
+                      userReaction: wasReacted ? 'HEART' : null,
+                    }
+                  : r
+              ),
+            };
+          }
+          return c;
+        });
+      });
+      toast.error('Không thể cập nhật cảm xúc');
+    }
+  };
+
+  // Post Top-level Comment
   const handlePostTopComment = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newContent.trim();
@@ -150,6 +418,9 @@ export function CommentThread({
       const created = res.comment;
       setComments((prev) => {
         if (prev.some((c) => c.id === created.id)) return prev;
+        if (sortBy === 'oldest') {
+          return [...prev, created];
+        }
         return [created, ...prev];
       });
       setNewContent('');
@@ -164,7 +435,11 @@ export function CommentThread({
     }
   };
 
-  const handleReply = async (parentId: string, content: string): Promise<boolean> => {
+  // Post Reply
+  const handleReply = async (
+    parentId: string,
+    content: string
+  ): Promise<boolean> => {
     try {
       const res = await createComment({
         dropId,
@@ -186,6 +461,7 @@ export function CommentThread({
             if (replies.some((r) => r.id === createdReply.id)) return c;
             return {
               ...c,
+              repliesCount: (c.repliesCount || replies.length) + 1,
               replies: [...replies, createdReply],
             };
           }
@@ -202,6 +478,7 @@ export function CommentThread({
     }
   };
 
+  // Edit Comment / Reply
   const handleEdit = async (commentId: string, content: string): Promise<boolean> => {
     try {
       const res = await updateComment({
@@ -220,6 +497,7 @@ export function CommentThread({
             return {
               ...c,
               content,
+              isEdited: true,
               updatedAt: new Date(),
             };
           }
@@ -228,7 +506,7 @@ export function CommentThread({
               ...c,
               replies: c.replies.map((r) =>
                 r.id === commentId
-                  ? { ...r, content, updatedAt: new Date() }
+                  ? { ...r, content, isEdited: true, updatedAt: new Date() }
                   : r
               ),
             };
@@ -245,6 +523,7 @@ export function CommentThread({
     }
   };
 
+  // Delete Comment / Reply
   const handleConfirmDelete = async () => {
     if (!deleteTarget || isDeleting) return;
 
@@ -256,22 +535,53 @@ export function CommentThread({
         return;
       }
 
-      let deletedCount = 1;
+      const isSoftDeleted = Boolean(res.isSoftDeleted);
+
       setComments((prev) => {
-        const topLevel = prev.find((c) => c.id === deleteTarget.id);
-        if (topLevel) {
-          deletedCount += topLevel.replies?.length || 0;
+        if (!deleteTarget.isReply) {
+          if (isSoftDeleted) {
+            return prev.map((c) =>
+              c.id === deleteTarget.id
+                ? {
+                    ...c,
+                    deletedAt: new Date(),
+                    content: 'Bình luận này đã bị xóa.',
+                  }
+                : c
+            );
+          }
           return prev.filter((c) => c.id !== deleteTarget.id);
         }
 
-        return prev.map((c) => ({
-          ...c,
-          replies: c.replies?.filter((r) => r.id !== deleteTarget.id),
-        }));
+        // Inside a reply
+        return prev.map((c) => {
+          if (c.replies && c.replies.some((r) => r.id === deleteTarget.id)) {
+            if (isSoftDeleted) {
+              return {
+                ...c,
+                replies: c.replies.map((r) =>
+                  r.id === deleteTarget.id
+                    ? {
+                        ...r,
+                        deletedAt: new Date(),
+                        content: 'Câu trả lời này đã bị xóa.',
+                      }
+                    : r
+                ),
+              };
+            }
+            return {
+              ...c,
+              repliesCount: Math.max(0, (c.repliesCount || c.replies.length) - 1),
+              replies: c.replies.filter((r) => r.id !== deleteTarget.id),
+            };
+          }
+          return c;
+        });
       });
 
       toast.success(deleteTarget.isReply ? 'Đã xóa câu trả lời' : 'Đã xóa bình luận');
-      onCommentsCountChange?.(Math.max(0, totalComments - deletedCount));
+      onCommentsCountChange?.(Math.max(0, totalComments - 1));
       setDeleteTarget(null);
     } catch {
       toast.error('Lỗi khi xóa bình luận');
@@ -283,9 +593,9 @@ export function CommentThread({
   return (
     <div className="space-y-6">
       {/* Header with counter and realtime status */}
-      <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-border/60">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-indigo-500" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-border/60">
+        <div className="flex items-center gap-2 flex-wrap">
+          <MessageSquare className="w-4 h-4 text-indigo-500 shrink-0" />
           <h3 className="text-sm font-bold text-zinc-900 dark:text-foreground">
             {title}
           </h3>
@@ -299,9 +609,37 @@ export function CommentThread({
             </span>
           )}
         </div>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-secondary text-zinc-600 dark:text-muted-foreground">
-          {totalComments} {totalComments === 1 ? 'bình luận' : 'bình luận'}
-        </span>
+
+        <div className="flex items-center gap-2.5">
+          {/* Sorting Selector Tabs */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-border/40 text-[11px]">
+            {(
+              [
+                { key: 'relevant', label: 'Phù hợp nhất' },
+                { key: 'newest', label: 'Mới nhất' },
+                { key: 'oldest', label: 'Cũ nhất' },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => handleSortChange(item.key)}
+                disabled={isSorting}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                  sortBy === item.key
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-foreground shadow-2xs font-semibold'
+                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-secondary text-zinc-600 dark:text-muted-foreground shrink-0">
+            {totalComments} {totalComments === 1 ? 'bình luận' : 'bình luận'}
+          </span>
+        </div>
       </div>
 
       {/* Main Comment Composer */}
@@ -322,7 +660,10 @@ export function CommentThread({
               onChange={(e) => setNewContent(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-2xl border border-zinc-200 dark:border-border bg-white dark:bg-card text-zinc-900 dark:text-foreground text-xs placeholder:text-zinc-400 dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-foreground/20 resize-none leading-relaxed shadow-2xs"
             />
-            <div className="flex items-center justify-end mt-1.5">
+            <div className="flex items-center justify-between mt-1.5 px-1">
+              <span className="text-[10px] text-zinc-400 dark:text-muted-foreground">
+                {newContent.length}/1000
+              </span>
               <button
                 type="submit"
                 disabled={submitting || !newContent.trim()}
@@ -344,30 +685,67 @@ export function CommentThread({
         </div>
       )}
 
+      {/* Sorting Loading Indicator */}
+      {isSorting && (
+        <div className="flex items-center justify-center py-6 gap-2 text-xs text-zinc-400 dark:text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Đang sắp xếp bình luận...</span>
+        </div>
+      )}
+
       {/* Comments List */}
-      <div className="space-y-5 pt-2">
-        {comments.length === 0 ? (
-          <div className="py-8 text-center space-y-1 text-zinc-400 dark:text-muted-foreground">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-              Chưa có bình luận nào
-            </p>
-            <p className="text-[11px]">
-              Hãy là người đầu tiên chia sẻ cảm nghĩ, góc nhìn hoặc đặt câu hỏi.
-            </p>
-          </div>
-        ) : (
-          comments.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              currentUserId={currentUserId}
-              onReply={handleReply}
-              onEdit={handleEdit}
-              onDeleteRequest={(target) => setDeleteTarget(target)}
-            />
-          ))
-        )}
-      </div>
+      {!isSorting && (
+        <div className="space-y-5 pt-2">
+          {comments.length === 0 ? (
+            <div className="py-8 text-center space-y-1 text-zinc-400 dark:text-muted-foreground">
+              <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                Chưa có bình luận nào
+              </p>
+              <p className="text-[11px]">
+                Hãy là người đầu tiên chia sẻ cảm nghĩ, góc nhìn hoặc đặt câu hỏi.
+              </p>
+            </div>
+          ) : (
+            comments.map((comment) => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                currentUserId={currentUserId}
+                onReply={handleReply}
+                onEdit={handleEdit}
+                onDeleteRequest={(target) => setDeleteTarget(target)}
+                onToggleReaction={handleToggleReaction}
+                onLoadMoreReplies={handleLoadMoreReplies}
+                isLoadingReplies={loadingRepliesId === comment.id}
+              />
+            ))
+          )}
+
+          {/* Pagination: Load More Comments Button */}
+          {hasMore && (
+            <div className="pt-3 text-center">
+              <button
+                type="button"
+                onClick={handleLoadMoreComments}
+                disabled={loadingMore}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-zinc-100 hover:bg-zinc-200/70 dark:bg-secondary dark:hover:bg-secondary/80 text-zinc-700 dark:text-foreground border border-zinc-200/60 dark:border-border/60 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang tải thêm...</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                    <span>Xem thêm bình luận</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modern Redesigned Delete Confirmation Modal */}
       <DeleteCommentModal

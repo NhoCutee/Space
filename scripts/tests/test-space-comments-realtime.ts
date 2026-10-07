@@ -263,6 +263,9 @@ async function runSpaceCommentsAndRealtimeTests() {
       userId: maya.id,
       parentId: null,
       content: 'Realtime live comment payload',
+      reactionsCount: 0,
+      isEdited: false,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       user: {

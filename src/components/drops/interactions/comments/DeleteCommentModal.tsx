@@ -117,12 +117,12 @@ export function DeleteCommentModal({
           </p>
         </div>
 
-        {/* Warning if top-level comment has nested replies */}
+        {/* Notice if top-level comment has nested replies */}
         {!target.isReply && (target.repliesCount || 0) > 0 && (
           <div className="mt-3 flex items-start gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/70 dark:border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
             <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
             <span>
-              Lưu ý: Bình luận này có <strong>{target.repliesCount}</strong> câu trả lời bên dưới. Tất cả câu trả lời cũng sẽ bị xóa.
+              Lưu ý: Bình luận này có <strong>{target.repliesCount}</strong> câu trả lời. Nội dung bình luận sẽ được ẩn và đánh dấu đã xóa để bảo toàn các câu trả lời bên dưới.
             </span>
           </div>
         )}

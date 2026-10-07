@@ -25,6 +25,7 @@ model User {
   drops        Drop[]
   reactions    Reaction[]
   comments     Comment[]
+  commentReactions CommentReaction[]
   collections  Collection[]
   notificationsReceived Notification[] @relation("RecipientUser")
   notificationsSent     Notification[] @relation("ActorUser")
@@ -147,22 +148,41 @@ model Reaction {
 }
 
 model Comment {
-  id        String    @id @default(uuid())
-  spaceId   String?
-  dropId    String?
-  userId    String
-  parentId  String?
-  content   String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
-  space     Space?    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  drop      Drop?     @relation(fields: [dropId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent    Comment?  @relation("ThreadedComments", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("ThreadedComments")
+  id             String            @id @default(uuid())
+  spaceId        String?
+  dropId         String?
+  userId         String
+  parentId       String?
+  content        String
+  reactionsCount Int               @default(0)
+  isEdited       Boolean           @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @default(now()) @updatedAt
+  space          Space?            @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  drop           Drop?             @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent         Comment?          @relation("ThreadedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Comment[]         @relation("ThreadedComments")
+  reactions      CommentReaction[]
 
   @@index([spaceId, parentId, createdAt])
   @@index([dropId, parentId, createdAt])
+  @@index([userId])
+}
+
+model CommentReaction {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String
+  type      String   @default("HEART") // HEART, INSPIRED, FIRE, etc.
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, type])
+  @@index([commentId])
+  @@index([userId])
 }
 
 model Collection {

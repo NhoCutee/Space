@@ -12,10 +12,28 @@ interface RelativeTimeProps {
 /**
  * Format relative time safely using local client time.
  */
-export function formatRelativeTime(dateInput: Date | string): string {
+export function formatRelativeTime(dateInput: Date | string, locale: 'vi' | 'en' = 'vi'): string {
   const date = new Date(dateInput);
   const now = Date.now();
   const diffSeconds = Math.max(0, Math.floor((now - date.getTime()) / 1000));
+
+  if (locale === 'vi') {
+    if (diffSeconds < 15) return 'vừa xong';
+    if (diffSeconds < 60) return `${diffSeconds} giây trước`;
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'hôm qua';
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+
+    return date.toLocaleDateString('vi-VN', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+    });
+  }
 
   if (diffSeconds < 15) {
     return 'just now';
@@ -62,7 +80,8 @@ export function RelativeTime({
   updatedAt,
   className = '',
   showBothIfEdited = false,
-}: RelativeTimeProps) {
+  locale = 'vi',
+}: RelativeTimeProps & { locale?: 'vi' | 'en' }) {
   const [mounted, setMounted] = useState(false);
   const [, setTick] = useState(0);
 
@@ -89,31 +108,34 @@ export function RelativeTime({
   const isEdited =
     updatedDate && updatedDate.getTime() - createdDate.getTime() > 2000;
 
+  const editedPrefix = locale === 'vi' ? 'Đã chỉnh sửa' : 'Edited';
+  const createdLabel = locale === 'vi' ? 'Đã tạo' : 'Created';
+
   // Static fallback for SSR
   if (!mounted) {
     return (
       <span className={className} suppressHydrationWarning>
         {isEdited
-          ? `Edited ${formatRelativeTime(updatedDate!)}`
-          : formatRelativeTime(createdDate)}
+          ? `${editedPrefix} ${formatRelativeTime(updatedDate!, locale)}`
+          : formatRelativeTime(createdDate, locale)}
       </span>
     );
   }
 
-  const localCreatedString = createdDate.toLocaleString();
-  const localUpdatedString = updatedDate ? updatedDate.toLocaleString() : '';
+  const localCreatedString = createdDate.toLocaleString(locale === 'vi' ? 'vi-VN' : undefined);
+  const localUpdatedString = updatedDate ? updatedDate.toLocaleString(locale === 'vi' ? 'vi-VN' : undefined) : '';
 
   const tooltip = isEdited
-    ? `Created: ${localCreatedString}\nEdited: ${localUpdatedString}`
-    : `Created: ${localCreatedString}`;
+    ? `${createdLabel}: ${localCreatedString}\n${editedPrefix}: ${localUpdatedString}`
+    : `${createdLabel}: ${localCreatedString}`;
 
   if (isEdited) {
     if (showBothIfEdited) {
       return (
         <span className={className} title={tooltip}>
-          <span>{formatRelativeTime(createdDate)}</span>
+          <span>{formatRelativeTime(createdDate, locale)}</span>
           <span className="italic ml-1 opacity-80">
-            • Edited {formatRelativeTime(updatedDate!)}
+            • {editedPrefix} {formatRelativeTime(updatedDate!, locale)}
           </span>
         </span>
       );
@@ -121,14 +143,14 @@ export function RelativeTime({
 
     return (
       <span className={className} title={tooltip}>
-        Edited {formatRelativeTime(updatedDate!)}
+        {editedPrefix} {formatRelativeTime(updatedDate!, locale)}
       </span>
     );
   }
 
   return (
     <span className={className} title={tooltip}>
-      {formatRelativeTime(createdDate)}
+      {formatRelativeTime(createdDate, locale)}
     </span>
   );
 }

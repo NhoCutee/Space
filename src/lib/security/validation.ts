@@ -77,11 +77,25 @@ export const CommentInputSchema = z.object({
   content: z
     .string()
     .trim()
-    .min(1, 'Comment cannot be empty')
-    .max(1000, 'Comment cannot exceed 1000 characters'),
+    .min(1, 'Nội dung bình luận không được để trống')
+    .max(1000, 'Nội dung bình luận tối đa 1000 ký tự'),
   spaceId: z.string().uuid().nullable().optional(),
   dropId: z.string().uuid().nullable().optional(),
   parentId: z.string().uuid().nullable().optional(),
+});
+
+export const CommentReactionInputSchema = z.object({
+  commentId: z.string().uuid('ID bình luận không hợp lệ'),
+  type: z.enum(['HEART', 'INSPIRED', 'FIRE', 'LIKE']).default('HEART'),
+});
+
+export const CommentEditInputSchema = z.object({
+  commentId: z.string().uuid('ID bình luận không hợp lệ'),
+  content: z
+    .string()
+    .trim()
+    .min(1, 'Nội dung chỉnh sửa không được để trống')
+    .max(1000, 'Nội dung chỉnh sửa tối đa 1000 ký tự'),
 });
 
 export const SpaceInputSchema = z.object({

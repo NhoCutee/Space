@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { CommentWithReplies } from '@/actions/comments';
 
-export type CommentRealtimeAction = 'created' | 'updated' | 'deleted';
+export type CommentRealtimeAction = 'created' | 'updated' | 'deleted' | 'reacted';
 
 export interface CommentRealtimeEvent {
   type: CommentRealtimeAction;
@@ -12,6 +12,9 @@ export interface CommentRealtimeEvent {
   commentId?: string;
   parentId?: string | null;
   deletedCount?: number;
+  reactionsCount?: number;
+  reactionType?: string;
+  isSoftDeleted?: boolean;
   timestamp: string;
 }
 
