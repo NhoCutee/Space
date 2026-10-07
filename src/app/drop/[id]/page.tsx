@@ -61,6 +61,10 @@ export default async function DropDetailPage({ params }: DropPageProps) {
   }
 
   const specsList = Object.entries(drop.parsedSpecs || {});
+  const realCommentsCount = initialComments.reduce(
+    (acc, c) => acc + (c.deletedAt ? 0 : 1) + (c.replies?.filter((r) => !r.deletedAt).length || 0),
+    0
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -183,7 +187,7 @@ export default async function DropDetailPage({ params }: DropPageProps) {
                 dropId={drop.id}
                 dropTitle={drop.title}
                 reactionsCount={drop.reactionsCount}
-                commentsCount={drop.commentsCount}
+                commentsCount={realCommentsCount}
                 savesCount={drop.savesCount}
                 userReacted={reactionState.reacted}
                 currentUser={
