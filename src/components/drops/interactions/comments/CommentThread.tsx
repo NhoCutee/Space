@@ -244,7 +244,7 @@ export function CommentThread({
     []
   );
 
-  const { isConnected } = useRealtimeComments({
+  useRealtimeComments({
     spaceId,
     dropId,
     onCommentCreated: handleRealtimeCreated,
@@ -638,15 +638,6 @@ export function CommentThread({
           <h3 className="text-sm font-bold text-zinc-900 dark:text-foreground truncate">
             {title}
           </h3>
-          {isConnected && (
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0"
-              title="Đang cập nhật trực tiếp theo thời gian thực"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Trực tiếp</span>
-            </span>
-          )}
         </div>
 
         {/* Facebook-style Sort Dropdown */}
