@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { Navbar } from '@/components/navigation/Navbar';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { getCurrentUser } from '@/lib/auth';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default async function RootLayout({
           <main className="flex-1 pb-16 md:pb-6">{children}</main>
           <BottomNav currentUsername={user?.username} />
           <Toaster richColors position="bottom-right" />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
