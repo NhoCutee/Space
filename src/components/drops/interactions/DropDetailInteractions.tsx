@@ -35,7 +35,13 @@ export function DropDetailInteractions({
 }: DropDetailInteractionsProps) {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [savesCount, setSavesCount] = useState(initialSavesCount);
-  const [commentsCount, setCommentsCount] = useState(initialCommentsCount);
+
+  // Compute exact count from initialComments so the comment badge next to Save matches exactly
+  const initialComputedCount = initialComments.reduce(
+    (acc, c) => acc + (c.deletedAt ? 0 : 1) + (c.replies?.filter((r) => !r.deletedAt).length || 0),
+    0
+  );
+  const [commentsCount, setCommentsCount] = useState(initialComputedCount);
 
   return (
     <div className="space-y-6">

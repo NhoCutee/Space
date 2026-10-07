@@ -111,6 +111,11 @@ export function CommentThread({
     0
   );
 
+  // Synchronize count to parent component
+  useEffect(() => {
+    onCommentsCountChange?.(totalComments);
+  }, [totalComments, onCommentsCountChange]);
+
   // Realtime Event Listeners
   const handleRealtimeCreated = useCallback((newComment: CommentWithReplies) => {
     setComments((prev) => {
@@ -138,9 +143,7 @@ export function CommentThread({
         return c;
       });
     });
-
-    onCommentsCountChange?.(totalComments + 1);
-  }, [totalComments, onCommentsCountChange]);
+  }, []);
 
   const handleRealtimeUpdated = useCallback((updatedComment: CommentWithReplies) => {
     setComments((prev) =>
@@ -633,16 +636,16 @@ export function CommentThread({
 
   return (
     <div className="space-y-6">
-      {/* Header with counter and realtime status */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-border/60">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Header with realtime status and Facebook-style sort dropdown */}
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-zinc-100 dark:border-border/60">
+        <div className="flex items-center gap-2 min-w-0">
           <MessageSquare className="w-4 h-4 text-indigo-500 shrink-0" />
-          <h3 className="text-sm font-bold text-zinc-900 dark:text-foreground">
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-foreground truncate">
             {title}
           </h3>
           {isConnected && (
             <span
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0"
               title="Đang cập nhật trực tiếp theo thời gian thực"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -651,74 +654,68 @@ export function CommentThread({
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Facebook-style Sort Dropdown */}
-          <div ref={sortDropdownRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setIsSortDropdownOpen((prev) => !prev)}
-              disabled={isSorting}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-100 hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200/60 dark:border-border/60 transition-colors cursor-pointer select-none"
-              aria-expanded={isSortDropdownOpen}
-              aria-haspopup="listbox"
-              title="Thay đổi cách sắp xếp bình luận"
+        {/* Facebook-style Sort Dropdown */}
+        <div ref={sortDropdownRef} className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+            disabled={isSorting}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-100 hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200/60 dark:border-border/60 transition-colors cursor-pointer select-none"
+            aria-expanded={isSortDropdownOpen}
+            aria-haspopup="listbox"
+            title="Thay đổi cách sắp xếp bình luận"
+          >
+            <span>{SORT_OPTIONS.find((opt) => opt.key === sortBy)?.label || 'Phù hợp nhất'}</span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${
+                isSortDropdownOpen ? 'rotate-180 text-zinc-700 dark:text-zinc-200' : ''
+              }`}
+            />
+          </button>
+
+          {/* Dropdown Menu */}
+          {isSortDropdownOpen && (
+            <div
+              role="listbox"
+              className="absolute right-0 mt-1.5 w-60 max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-border/80 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md"
             >
-              <span>{SORT_OPTIONS.find((opt) => opt.key === sortBy)?.label || 'Phù hợp nhất'}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${
-                  isSortDropdownOpen ? 'rotate-180 text-zinc-700 dark:text-zinc-200' : ''
-                }`}
-              />
-            </button>
-
-            {/* Dropdown Menu */}
-            {isSortDropdownOpen && (
-              <div
-                role="listbox"
-                className="absolute right-0 mt-1.5 w-64 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-border/80 shadow-xl p-1.5 z-30 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md"
-              >
-                <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-muted-foreground border-b border-zinc-100 dark:border-border/50 mb-1">
-                  Sắp xếp bình luận
-                </div>
-                {SORT_OPTIONS.map((opt) => {
-                  const isSelected = sortBy === opt.key;
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      onClick={() => {
-                        handleSortChange(opt.key);
-                        setIsSortDropdownOpen(false);
-                      }}
-                      className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 cursor-pointer ${
-                        isSelected
-                          ? 'bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-900 dark:text-foreground font-semibold'
-                          : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300'
-                      }`}
-                    >
-                      <div className="mt-0.5 w-4 h-4 shrink-0 flex items-center justify-center">
-                        {isSelected && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold text-zinc-900 dark:text-foreground">
-                          {opt.label}
-                        </div>
-                        <div className="text-[11px] text-zinc-500 dark:text-muted-foreground font-normal leading-tight mt-0.5">
-                          {opt.description}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-muted-foreground border-b border-zinc-100 dark:border-border/50 mb-1">
+                Sắp xếp bình luận
               </div>
-            )}
-          </div>
-
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-secondary text-zinc-600 dark:text-muted-foreground shrink-0">
-            {totalComments} {totalComments === 1 ? 'bình luận' : 'bình luận'}
-          </span>
+              {SORT_OPTIONS.map((opt) => {
+                const isSelected = sortBy === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      handleSortChange(opt.key);
+                      setIsSortDropdownOpen(false);
+                    }}
+                    className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-900 dark:text-foreground font-semibold'
+                        : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300'
+                    }`}
+                  >
+                    <div className="mt-0.5 w-4 h-4 shrink-0 flex items-center justify-center">
+                      {isSelected && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-zinc-900 dark:text-foreground">
+                        {opt.label}
+                      </div>
+                      <div className="text-[11px] text-zinc-500 dark:text-muted-foreground font-normal leading-tight mt-0.5">
+                        {opt.description}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
