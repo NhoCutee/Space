@@ -20,12 +20,13 @@ export async function GET(
   const { provider } = await params;
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
   const proto = req.headers.get('x-forwarded-proto') || (host && !host.includes('localhost') ? 'https' : 'http');
-  const appUrl =
+  const rawAppUrl =
     (host ? `${proto}://${host}` : undefined) ||
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined) ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
     req.nextUrl.origin;
+  const appUrl = rawAppUrl.trim().replace(/\/+$/, '');
 
   if (provider !== 'google' && provider !== 'github') {
     return NextResponse.redirect(`${appUrl}/?authError=unsupported_provider`);

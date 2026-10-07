@@ -102,12 +102,13 @@ export async function getOAuthUrlAction(provider: OAuthProvider) {
   const proto = headerStore.get('x-forwarded-proto') || (host && !host.includes('localhost') ? 'https' : 'http');
   const requestOrigin = host ? `${proto}://${host}` : undefined;
 
-  const appUrl =
+  const rawAppUrl =
     requestOrigin ||
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined) ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
     'http://localhost:3000';
+  const appUrl = rawAppUrl.trim().replace(/\/+$/, '');
   const redirectUri = `${appUrl}/api/auth/callback/${provider}`;
 
   const authUrl = getAuthorizationUrl(provider, redirectUri, state, codeChallenge);
