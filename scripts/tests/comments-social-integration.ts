@@ -139,7 +139,10 @@ async function runSocialCommentTests() {
     data: { reactionsCount: { increment: 1 } },
   });
 
-  topAfterReact = await prisma.comment.findUnique({ where: { id: topComment.id } });
+  topAfterReact = await prisma.comment.findUnique({
+    where: { id: topComment.id },
+    include: { reactions: true },
+  });
   console.log(`✅ User C reacted to top comment. reactionsCount = ${topAfterReact?.reactionsCount}`);
 
   // 5. Test Reaction Toggle on Reply
