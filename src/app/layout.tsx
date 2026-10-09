@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { getCurrentUser } from '@/lib/auth';
 import './globals.css';
 
+// Root layout for Spaces Visual Commons
 export const metadata: Metadata = {
   title: 'Spaces — Visual Commons',
   description: 'A space-centric visual social network where topics are communities.',
@@ -15,6 +16,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#fafafa' },
     { media: '(prefers-color-scheme: dark)', color: '#09090b' },
@@ -38,7 +40,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Navbar user={user} />
-          <main className="flex-1 pb-16 md:pb-6">{children}</main>
+          <main className="flex-1 pb-24 md:pb-8">{children}</main>
           <BottomNav currentUsername={user?.username} />
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>

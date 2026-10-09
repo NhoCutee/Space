@@ -47,9 +47,9 @@ export function SpaceMasthead({ space, initialJoined, userRole }: SpaceMastheadP
   };
 
   return (
-    <div className="relative w-full rounded-3xl overflow-hidden border border-border/80 bg-card mb-8 shadow-sm">
+    <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-border/80 bg-card mb-4 sm:mb-8 shadow-xs">
       {/* Cover Image & Atmospheric Gradient */}
-      <div className="relative w-full h-56 sm:h-72 md:h-80 overflow-hidden bg-muted">
+      <div className="relative w-full h-36 sm:h-72 md:h-80 overflow-hidden bg-muted">
         <img
           src={space.coverImageUrl}
           alt={space.name}
@@ -62,31 +62,31 @@ export function SpaceMasthead({ space, initialJoined, userRole }: SpaceMastheadP
         />
 
         {/* Top Badges */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-          <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-background/80 backdrop-blur-md text-foreground border border-border/60">
+        <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between">
+          <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-semibold uppercase tracking-wider bg-background/80 backdrop-blur-md text-foreground border border-border/60">
             {space.category}
           </span>
 
           <button
             onClick={handleShare}
-            className="p-2 rounded-full bg-background/80 backdrop-blur-md text-foreground border border-border/60 hover:bg-background transition-colors"
+            className="p-1.5 sm:p-2 rounded-full bg-background/80 backdrop-blur-md text-foreground border border-border/60 hover:bg-background transition-colors active:scale-95 cursor-pointer"
             title="Share Space"
             aria-label="Share Space"
           >
             {copied ? (
-              <Check className="w-4 h-4 text-emerald-500" />
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             ) : (
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             )}
           </button>
         </div>
       </div>
 
       {/* Space Details & Actions */}
-      <div className="relative px-6 py-6 sm:px-8 -mt-12 sm:-mt-16 z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="relative px-4 py-4 sm:px-8 sm:py-6 -mt-8 sm:-mt-16 z-10 flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
         <div className="max-w-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground">
+          <div className="flex items-center gap-2.5 mb-1.5 sm:mb-2">
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground">
               {space.name}
             </h1>
             {userRole && (
@@ -97,19 +97,19 @@ export function SpaceMasthead({ space, initialJoined, userRole }: SpaceMastheadP
             )}
           </div>
 
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+          <p className="text-xs sm:text-base text-muted-foreground leading-relaxed line-clamp-3 sm:line-clamp-none">
             {space.description}
           </p>
 
           {/* Member Avatars & Stats */}
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+          <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5 font-medium text-foreground">
-              <Users className="w-4 h-4 text-emerald-500" />
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
               <span>{membersCount} members</span>
             </div>
 
             <div className="flex items-center gap-1.5 font-medium text-foreground">
-              <Sparkles className="w-4 h-4 text-amber-500" />
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
               <span>{space.dropsCount} drops</span>
             </div>
 
@@ -137,7 +137,7 @@ export function SpaceMasthead({ space, initialJoined, userRole }: SpaceMastheadP
                     <img
                       src={m.user.avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(m.user.username)}`}
                       alt={m.user.displayName}
-                      className="inline-block h-6 w-6 rounded-full ring-2 ring-background object-cover"
+                      className="inline-block h-5 w-5 sm:h-6 sm:w-6 rounded-full ring-2 ring-background object-cover"
                     />
                   </Link>
                 ))}
@@ -147,12 +147,12 @@ export function SpaceMasthead({ space, initialJoined, userRole }: SpaceMastheadP
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 pt-1 sm:pt-0">
           <Link
             href={`/create?space=${space.slug}`}
-            className="px-4 py-2.5 rounded-full text-sm font-semibold bg-foreground text-background hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            className="flex-1 sm:flex-none justify-center px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold bg-foreground text-background hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Drop</span>
           </Link>
 

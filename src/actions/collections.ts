@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { getMediaVariantUrl } from '@/lib/media/responsive';
 
 export interface CollectionSummary {
   id: string;
@@ -62,7 +63,7 @@ export async function getUserCollections(targetUserId?: string): Promise<Collect
                 media: {
                   take: 1,
                   orderBy: { sortOrder: 'asc' },
-                  select: { url: true },
+                  select: { url: true, variants: true },
                 },
               },
             },
@@ -82,7 +83,7 @@ export async function getUserCollections(targetUserId?: string): Promise<Collect
       updatedAt: c.updatedAt,
       user: c.user,
       previewImages: c.items
-        .map((it) => it.drop.media[0]?.url)
+        .map((it) => getMediaVariantUrl(it.drop.media[0], 'small', it.drop.media[0]?.url))
         .filter((url): url is string => Boolean(url)),
     }));
   } catch (err) {
@@ -139,6 +140,7 @@ export async function getCollectionById(collectionId: string) {
                     width: true,
                     height: true,
                     aspectRatio: true,
+                    variants: true,
                   },
                 },
               },

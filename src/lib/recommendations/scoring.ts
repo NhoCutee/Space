@@ -25,6 +25,7 @@ export interface ScoredSpace {
     title: string;
     mediaUrl: string;
     aspectRatio: number;
+    variants?: string | null;
   }>;
 }
 
@@ -58,6 +59,7 @@ export interface ScoredDrop {
     width: number;
     height: number;
     aspectRatio: number;
+    variants?: string | null;
   }>;
 }
 
@@ -78,7 +80,7 @@ export async function getRecommendedSpaces(
           include: {
             media: {
               take: 1,
-              select: { url: true, aspectRatio: true },
+              select: { url: true, aspectRatio: true, variants: true },
             },
           },
         },
@@ -213,6 +215,7 @@ export async function getRecommendedSpaces(
         title: d.title,
         mediaUrl: d.media[0]?.url || space.coverImageUrl,
         aspectRatio: d.media[0]?.aspectRatio || 1.33,
+        variants: d.media[0]?.variants || null,
       })),
     };
   });
@@ -371,6 +374,7 @@ export async function getHomeFeedDrops(
         width: m.width,
         height: m.height,
         aspectRatio: m.aspectRatio,
+        variants: m.variants,
       })),
     };
   });

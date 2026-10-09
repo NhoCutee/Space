@@ -23,6 +23,7 @@ import {
   PreferencesSchema,
 } from '@/lib/security/validation';
 import { checkRateLimit, RATE_LIMIT_PRESETS } from '@/lib/security/rateLimit';
+import { AVATAR_SIZE } from '@/lib/media/constants';
 
 // =========================================================================
 // 1. PROFILE SETTINGS & AVATAR UPLOAD
@@ -72,10 +73,10 @@ export async function uploadAvatarAction(formData: FormData): Promise<{
       return { success: false, error: 'Tệp tải lên không phải là định dạng hình ảnh hợp lệ.' };
     }
 
-    // High quality center-crop to square 400x400 WebP
+    // High quality center-crop to square AVATAR_SIZE (256x256) WebP
     const processedBuffer = await sharp(inputBuffer)
       .rotate() // Auto-orient based on EXIF
-      .resize(400, 400, {
+      .resize(AVATAR_SIZE, AVATAR_SIZE, {
         fit: 'cover',
         position: 'center',
       })

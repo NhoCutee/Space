@@ -177,17 +177,17 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 px-3 sm:px-4 bg-background/80 dark:bg-black/70 backdrop-blur-md animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-0 sm:pt-20 px-0 sm:px-4 bg-background/90 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
       <div
         className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-2xl rounded-3xl border border-border/80 bg-card shadow-2xl overflow-hidden z-10 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
+      <div className="relative w-full max-w-2xl h-full sm:h-auto sm:max-h-[85vh] rounded-none sm:rounded-3xl border-0 sm:border border-border/80 bg-card shadow-2xl overflow-hidden z-10 animate-in zoom-in-95 duration-150 flex flex-col">
         {/* Search Input Bar */}
-        <div className="p-4 sm:p-5 border-b border-border/60 flex items-center gap-3">
-          <Search className="w-5 h-5 text-muted-foreground shrink-0" />
+        <div className="p-3.5 sm:p-5 border-b border-border/60 flex items-center gap-2.5 sm:gap-3">
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground shrink-0" />
           <input
             id="search-dialog-input"
             name="query"
@@ -195,7 +195,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm Không gian, Tác phẩm, Nghệ sĩ, Chủ đề... (⌘K)"
+            placeholder="Tìm Không gian, Tác phẩm, Nghệ sĩ... (⌘K)"
             aria-label="Tìm kiếm Không gian, Tác phẩm, Nghệ sĩ hoặc Chủ đề"
             className="flex-1 bg-transparent text-sm sm:text-base font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
@@ -206,6 +206,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
               type="button"
               onClick={() => setQuery('')}
               className="p-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Xóa từ khóa tìm kiếm"
             >
               <X className="w-4 h-4" />
             </button>
@@ -214,6 +215,16 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
               ESC
             </kbd>
           )}
+
+          {/* Close button for mobile */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="sm:hidden p-1.5 rounded-full text-muted-foreground hover:text-foreground active:scale-95 cursor-pointer"
+            aria-label="Đóng tìm kiếm"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Category Pills Bar */}

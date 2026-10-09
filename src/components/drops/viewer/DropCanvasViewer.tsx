@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getMediaVariantUrl, getResponsiveImageProps } from '@/lib/media/responsive';
 
 export interface DropMediaItem {
   id?: string;
@@ -18,6 +19,7 @@ export interface DropMediaItem {
   width?: number;
   height?: number;
   aspectRatio?: number;
+  variants?: string | Record<string, string> | null;
 }
 
 interface DropCanvasViewerProps {
@@ -25,6 +27,8 @@ interface DropCanvasViewerProps {
   palette?: string[];
   dropTitle: string;
   dropId: string;
+  showPalette?: boolean;
+  isMobileCompact?: boolean;
 }
 
 export function DropCanvasViewer({
@@ -32,6 +36,8 @@ export function DropCanvasViewer({
   palette = [],
   dropTitle,
   dropId,
+  showPalette = false,
+  isMobileCompact = false,
 }: DropCanvasViewerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -100,36 +106,65 @@ export function DropCanvasViewer({
 
   const aspectRatio = activeMedia.aspectRatio || (activeMedia.width && activeMedia.height ? activeMedia.width / activeMedia.height : 1.5);
 
+  const mainStageImage = getResponsiveImageProps(activeMedia, {
+    defaultVariant: 'large',
+    sizes: isMobileCompact
+      ? '(max-width: 640px) 100vw, 680px'
+      : '(max-width: 768px) 100vw, (max-width: 1280px) 67vw, 840px',
+  });
+
   return (
-    <div className="space-y-4">
+    <div className={isMobileCompact ? 'space-y-0' : 'space-y-4 sm:space-y-6'}>
       {/* Main Exhibition Stage */}
-      <div className="relative group rounded-3xl overflow-hidden border border-border/80 bg-secondary/30 shadow-xs">
+      <div
+        className={
+          isMobileCompact
+            ? 'relative group overflow-hidden bg-secondary/30 dark:bg-black/40 flex items-center justify-center max-h-[440px] sm:max-h-[500px]'
+            : 'relative group rounded-2xl sm:rounded-3xl overflow-hidden border border-border/80 bg-secondary/30 shadow-xs flex items-center justify-center max-h-[64vh] lg:max-h-[72vh] xl:max-h-[720px]'
+        }
+      >
         <div
-          className="relative w-full flex items-center justify-center overflow-hidden cursor-zoom-in"
-          style={{ aspectRatio: `${aspectRatio}` }}
+          className={`relative w-full flex items-center justify-center overflow-hidden cursor-zoom-in ${
+            isMobileCompact
+              ? 'max-h-[440px] sm:max-h-[500px]'
+              : 'max-h-[64vh] lg:max-h-[72vh] xl:max-h-[720px]'
+          }`}
+          style={{
+            aspectRatio: aspectRatio ? `${aspectRatio}` : undefined,
+            maxHeight: isMobileCompact ? 'min(500px, 58vh)' : undefined,
+          }}
           onClick={() => setIsLightboxOpen(true)}
         >
           <img
-            src={activeMedia.url}
+            src={mainStageImage.src}
+            srcSet={mainStageImage.srcSet}
+            sizes={mainStageImage.sizes}
             alt={`${dropTitle} - Tác phẩm ${activeIndex + 1}`}
-            className="w-full h-full object-cover transition-opacity duration-300"
+            className={`w-full h-full object-contain transition-opacity duration-200 ${
+              isMobileCompact
+                ? 'max-h-[440px] sm:max-h-[500px]'
+                : 'max-h-[64vh] lg:max-h-[72vh] xl:max-h-[720px]'
+            }`}
             loading="eager"
+            decoding="async"
           />
 
-          {/* Canvas Floating Tools (Fullscreen & Share) */}
-          <div className="absolute top-3.5 right-3.5 z-20 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyLink();
-              }}
-              title="Sao chép liên kết tác phẩm"
-              aria-label="Sao chép liên kết tác phẩm"
-              className="p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer"
-            >
-              {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-            </button>
+          {/* Canvas Floating Tools */}
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+            {!isMobileCompact && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyLink();
+                }}
+                title="Sao chép liên kết tác phẩm"
+                aria-label="Sao chép liên kết tác phẩm"
+                className="p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer"
+              >
+                {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
+              </button>
+            )}
 
             <button
               type="button"
@@ -139,9 +174,13 @@ export function DropCanvasViewer({
               }}
               title="Xem toàn màn hình"
               aria-label="Xem toàn màn hình"
-              className="p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer"
+              className={
+                isMobileCompact
+                  ? 'p-2 rounded-full bg-background/80 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer'
+                  : 'p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer'
+              }
             >
-              <Maximize2 className="w-4 h-4" />
+              <Maximize2 className={isMobileCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
             </button>
           </div>
 
@@ -155,7 +194,7 @@ export function DropCanvasViewer({
                   handlePrev();
                 }}
                 aria-label="Tác phẩm trước"
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -167,7 +206,7 @@ export function DropCanvasViewer({
                   handleNext();
                 }}
                 aria-label="Tác phẩm kế tiếp"
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-background/85 hover:bg-background text-foreground backdrop-blur-md border border-border/70 shadow-xs transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -176,8 +215,12 @@ export function DropCanvasViewer({
 
           {/* Multi-Asset Indicator Badge */}
           {hasMultiple && (
-            <div className="absolute bottom-3.5 left-3.5 z-20 px-3 py-1 rounded-full text-xs font-semibold bg-background/85 backdrop-blur-md text-foreground border border-border/70 shadow-xs">
-              Ảnh {activeIndex + 1} / {media.length}
+            <div
+              className={`absolute bottom-3 left-3 z-20 px-2.5 py-0.5 rounded-full font-semibold bg-background/85 backdrop-blur-md text-foreground border border-border/70 shadow-xs ${
+                isMobileCompact ? 'text-[11px]' : 'text-xs px-3 py-1'
+              }`}
+            >
+              {isMobileCompact ? `${activeIndex + 1} / ${media.length}` : `Ảnh ${activeIndex + 1} / ${media.length}`}
             </div>
           )}
         </div>
@@ -185,7 +228,13 @@ export function DropCanvasViewer({
 
       {/* Multi-Asset Thumbnail Ribbon */}
       {hasMultiple && (
-        <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+        <div
+          className={
+            isMobileCompact
+              ? 'px-3 py-2 flex items-center gap-2 overflow-x-auto scrollbar-none bg-secondary/15 border-t border-border/50'
+              : 'flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none'
+          }
+        >
           {media.map((item, idx) => {
             const isCurrent = idx === activeIndex;
             return (
@@ -194,16 +243,22 @@ export function DropCanvasViewer({
                 type="button"
                 onClick={() => setActiveIndex(idx)}
                 aria-label={`Xem ảnh ${idx + 1}`}
-                className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden border transition-all cursor-pointer ${
+                className={`relative shrink-0 overflow-hidden border transition-all cursor-pointer ${
+                  isMobileCompact
+                    ? 'w-12 h-12 sm:w-14 sm:h-14 rounded-xl'
+                    : 'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl'
+                } ${
                   isCurrent
                     ? 'border-foreground ring-2 ring-foreground/20 scale-100 shadow-xs'
                     : 'border-border/80 opacity-70 hover:opacity-100 hover:border-foreground/40'
                 }`}
               >
                 <img
-                  src={item.url}
+                  src={getMediaVariantUrl(item, 'thumb', item.url)}
                   alt={`Thu nhỏ ảnh ${idx + 1}`}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
               </button>
             );
@@ -211,8 +266,8 @@ export function DropCanvasViewer({
         </div>
       )}
 
-      {/* Aesthetic Color Palette (Interactive Hex Swatches) */}
-      {palette && palette.length > 0 && (
+      {/* Aesthetic Color Palette (Interactive Hex Swatches - Full Card for Desktop) */}
+      {showPalette && palette && palette.length > 0 && (
         <div className="p-4 rounded-2xl bg-card border border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
             <Palette className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -299,9 +354,10 @@ export function DropCanvasViewer({
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={activeMedia.url}
+              src={getMediaVariantUrl(activeMedia, 'detail', activeMedia.url)}
               alt={dropTitle}
               className="max-h-[82vh] max-w-full object-contain rounded-2xl shadow-2xl"
+              decoding="async"
             />
 
             {/* Lightbox Carousel Controls */}

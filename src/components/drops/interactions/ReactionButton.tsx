@@ -67,7 +67,7 @@ export function ReactionButton({
   };
 
   const isSmall = size === 'sm';
-
+  
   return (
     <button
       type="button"

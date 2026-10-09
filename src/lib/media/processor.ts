@@ -52,16 +52,29 @@ export async function processImageSource(
     ? Number((originalWidth / originalHeight).toFixed(3))
     : 1.5;
 
-  // 2. Generate all 5 required variants + blurhash placeholder concurrently with controlled parallel pipeline
+  // 2. Generate responsive variants + blurhash placeholder concurrently with controlled parallel pipeline
+  // No upscaling: withoutEnlargement is true for all content artwork variants
   const [
+    detailResult,
     largeResult,
     mediumResult,
     smallResult,
-    thumbnailResult,
+    thumbResult,
     localThumbnailResult,
     blurhashBuf,
   ] = await Promise.all([
-    // Variant 1: Large (1200px width, aspect ratio preserved, no upscaling, WebP q85)
+    // Variant: Detail (1920px width, aspect ratio preserved, no upscaling, WebP q85)
+    sharp(inputBuffer, sharpSecurityOptions)
+      .rotate()
+      .resize({
+        width: IMAGE_VARIANTS_CONFIG.detail.width,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .webp({ quality: IMAGE_VARIANTS_CONFIG.detail.quality, effort: 3 })
+      .toBuffer({ resolveWithObject: true }),
+
+    // Variant: Large (1440px width, aspect ratio preserved, no upscaling, WebP q85)
     sharp(inputBuffer, sharpSecurityOptions)
       .rotate()
       .resize({
@@ -72,7 +85,7 @@ export async function processImageSource(
       .webp({ quality: IMAGE_VARIANTS_CONFIG.large.quality, effort: 3 })
       .toBuffer({ resolveWithObject: true }),
 
-    // Variant 2: Medium (640px width, aspect ratio preserved, no upscaling, WebP q80)
+    // Variant: Medium (960px width, aspect ratio preserved, no upscaling, WebP q82)
     sharp(inputBuffer)
       .rotate()
       .resize({
@@ -83,7 +96,7 @@ export async function processImageSource(
       .webp({ quality: IMAGE_VARIANTS_CONFIG.medium.quality, effort: 3 })
       .toBuffer({ resolveWithObject: true }),
 
-    // Variant 3: Small (250px width, aspect ratio preserved, no upscaling, WebP q80)
+    // Variant: Small / Card (640px width, aspect ratio preserved, no upscaling, WebP q82)
     sharp(inputBuffer)
       .rotate()
       .resize({
@@ -94,18 +107,18 @@ export async function processImageSource(
       .webp({ quality: IMAGE_VARIANTS_CONFIG.small.quality, effort: 3 })
       .toBuffer({ resolveWithObject: true }),
 
-    // Variant 4: Standard Thumbnail (500px width, aspect ratio preserved, no upscaling, WebP q80)
+    // Variant: Thumb (240px width, aspect ratio preserved, no upscaling, WebP q80)
     sharp(inputBuffer)
       .rotate()
       .resize({
-        width: IMAGE_VARIANTS_CONFIG.thumbnail.width,
+        width: IMAGE_VARIANTS_CONFIG.thumb.width,
         fit: 'inside',
         withoutEnlargement: true,
       })
-      .webp({ quality: IMAGE_VARIANTS_CONFIG.thumbnail.quality, effort: 3 })
+      .webp({ quality: IMAGE_VARIANTS_CONFIG.thumb.quality, effort: 3 })
       .toBuffer({ resolveWithObject: true }),
 
-    // Variant 5: Local Thumbnail (Fixed 240x200, center crop cover, WebP q80)
+    // Legacy Local Thumbnail (Fixed 240x200, center crop cover, WebP q80) for backward compatibility
     sharp(inputBuffer)
       .rotate()
       .resize({
@@ -127,6 +140,15 @@ export async function processImageSource(
   ]);
 
   const variants: Record<ImageVariantKey, ProcessedVariantResult> = {
+    detail: {
+      variantKey: 'detail',
+      width: detailResult.info.width,
+      height: detailResult.info.height,
+      aspectRatio: Number((detailResult.info.width / detailResult.info.height).toFixed(3)),
+      format: detailResult.info.format,
+      buffer: detailResult.data,
+      sizeBytes: detailResult.data.length,
+    },
     large: {
       variantKey: 'large',
       width: largeResult.info.width,
@@ -154,14 +176,24 @@ export async function processImageSource(
       buffer: smallResult.data,
       sizeBytes: smallResult.data.length,
     },
+    thumb: {
+      variantKey: 'thumb',
+      width: thumbResult.info.width,
+      height: thumbResult.info.height,
+      aspectRatio: Number((thumbResult.info.width / thumbResult.info.height).toFixed(3)),
+      format: thumbResult.info.format,
+      buffer: thumbResult.data,
+      sizeBytes: thumbResult.data.length,
+    },
+    // Backward compatibility: alias thumbnail to thumb result
     thumbnail: {
       variantKey: 'thumbnail',
-      width: thumbnailResult.info.width,
-      height: thumbnailResult.info.height,
-      aspectRatio: Number((thumbnailResult.info.width / thumbnailResult.info.height).toFixed(3)),
-      format: thumbnailResult.info.format,
-      buffer: thumbnailResult.data,
-      sizeBytes: thumbnailResult.data.length,
+      width: thumbResult.info.width,
+      height: thumbResult.info.height,
+      aspectRatio: Number((thumbResult.info.width / thumbResult.info.height).toFixed(3)),
+      format: thumbResult.info.format,
+      buffer: thumbResult.data,
+      sizeBytes: thumbResult.data.length,
     },
     localThumbnail: {
       variantKey: 'localThumbnail',

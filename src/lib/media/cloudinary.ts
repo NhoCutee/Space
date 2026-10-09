@@ -101,22 +101,22 @@ export async function uploadVariantToCloudinary(
 /**
  * Upload all pre-processed variants to Cloudinary in parallel.
  */
-export async function uploadAllVariants(
+export async function uploadAllVariants<K extends ImageVariantKey = ImageVariantKey>(
   mediaId: string,
-  variants: Record<ImageVariantKey, ProcessedVariantResult>,
+  variants: Record<K, ProcessedVariantResult>,
   dropId?: string
-): Promise<Record<ImageVariantKey, CloudinaryUploadResult>> {
-  const keys = Object.keys(variants) as ImageVariantKey[];
+): Promise<Record<K, CloudinaryUploadResult>> {
+  const keys = Object.keys(variants) as K[];
   const uploadPromises = keys.map((key) => uploadVariantToCloudinary(mediaId, variants[key], dropId));
 
   const results = await Promise.all(uploadPromises);
 
-  const output: Partial<Record<ImageVariantKey, CloudinaryUploadResult>> = {};
+  const output = {} as Record<K, CloudinaryUploadResult>;
   for (const res of results) {
-    output[res.variantKey] = res;
+    output[res.variantKey as K] = res;
   }
 
-  return output as Record<ImageVariantKey, CloudinaryUploadResult>;
+  return output;
 }
 
 export function isCloudinaryLive(): boolean {

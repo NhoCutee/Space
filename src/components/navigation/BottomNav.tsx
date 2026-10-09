@@ -24,8 +24,11 @@ export function BottomNav({ currentUsername }: BottomNavProps) {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-border/80 px-4 py-2">
-      <div className="flex items-center justify-around">
+    <nav
+      aria-label="Điều hướng chính trên di động"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-border/80 px-2 pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur-xl"
+    >
+      <div className="flex items-center justify-around max-w-md mx-auto">
         {links.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;
@@ -35,8 +38,8 @@ export function BottomNav({ currentUsername }: BottomNavProps) {
               <Link
                 key={link.label}
                 href="/create"
-                className="w-10 h-10 -mt-4 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer"
-                aria-label="Tạo mới"
+                className="w-11 h-11 -mt-5 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer ring-4 ring-background"
+                aria-label="Tạo mới tác phẩm hoặc không gian"
               >
                 <Plus className="w-5 h-5 stroke-[2.5]" />
               </Link>
@@ -47,16 +50,19 @@ export function BottomNav({ currentUsername }: BottomNavProps) {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex flex-col items-center gap-1 py-1 px-3 text-xs font-medium transition-colors ${
-                isActive ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center min-w-[54px] min-h-[44px] py-1 px-2 text-[11px] font-medium transition-all select-none active:scale-95 ${
+                isActive
+                  ? 'text-foreground font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span>{link.label}</span>
+              <Icon className={`w-4 h-4 mb-0.5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
+              <span className="leading-tight">{link.label}</span>
             </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

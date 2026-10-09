@@ -296,7 +296,7 @@ export function CommentItem({
                 <button
                   type="button"
                   onClick={() => onToggleReaction(comment.id, null)}
-                  className={`inline-flex items-center gap-1 font-semibold cursor-pointer transition-colors ${
+                  className={`inline-flex items-center gap-1 font-semibold cursor-pointer transition-colors py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation ${
                     hasReacted
                       ? 'text-rose-600 dark:text-rose-400'
                       : 'hover:text-zinc-900 dark:hover:text-foreground'
@@ -327,7 +327,7 @@ export function CommentItem({
                     handleStartReply();
                   }
                 }}
-                className="inline-flex items-center gap-1 hover:text-zinc-900 dark:hover:text-foreground font-semibold cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1 hover:text-zinc-900 dark:hover:text-foreground font-semibold cursor-pointer transition-colors py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation"
               >
                 <Reply className="w-3 h-3" />
                 <span>Trả lời</span>
@@ -342,7 +342,7 @@ export function CommentItem({
                       setIsEditing(true);
                       setEditContent(comment.content);
                     }}
-                    className="inline-flex items-center gap-1 hover:text-zinc-900 dark:hover:text-foreground font-medium cursor-pointer transition-colors opacity-75 group-hover:opacity-100"
+                    className="inline-flex items-center gap-1 hover:text-zinc-900 dark:hover:text-foreground font-medium cursor-pointer transition-colors opacity-75 group-hover:opacity-100 py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation"
                   >
                     <Pencil className="w-3 h-3" />
                     <span>Sửa</span>
@@ -351,7 +351,7 @@ export function CommentItem({
                   <button
                     type="button"
                     onClick={handleDeleteClick}
-                    className="inline-flex items-center gap-1 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 font-medium cursor-pointer transition-colors opacity-75 group-hover:opacity-100"
+                    className="inline-flex items-center gap-1 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 font-medium cursor-pointer transition-colors opacity-75 group-hover:opacity-100 py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation"
                   >
                     <Trash2 className="w-3 h-3" />
                     <span>Xóa</span>
@@ -634,7 +634,7 @@ function ReplyItem({
               <button
                 type="button"
                 onClick={() => onToggleReaction(reply.id, reply.parentId)}
-                className={`inline-flex items-center gap-0.5 font-semibold cursor-pointer transition-colors ${
+                className={`inline-flex items-center gap-0.5 font-semibold cursor-pointer transition-colors py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation ${
                   hasReacted
                     ? 'text-rose-600 dark:text-rose-400'
                     : 'hover:text-zinc-900 dark:hover:text-foreground'
@@ -659,7 +659,7 @@ function ReplyItem({
               <button
                 type="button"
                 onClick={() => onReplyToUser(reply.user)}
-                className="inline-flex items-center gap-0.5 hover:text-zinc-900 dark:hover:text-foreground font-semibold cursor-pointer transition-colors"
+                className="inline-flex items-center gap-0.5 hover:text-zinc-900 dark:hover:text-foreground font-semibold cursor-pointer transition-colors py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation"
               >
                 <Reply className="w-2.5 h-2.5" />
                 <span>Trả lời</span>
@@ -675,7 +675,7 @@ function ReplyItem({
                     setIsEditing(true);
                     setEditContent(reply.content);
                   }}
-                  className="inline-flex items-center gap-0.5 hover:text-zinc-900 dark:hover:text-foreground font-medium cursor-pointer transition-colors opacity-75 group-hover/reply:opacity-100"
+                  className="inline-flex items-center gap-0.5 hover:text-zinc-900 dark:hover:text-foreground font-medium cursor-pointer transition-colors opacity-75 group-hover/reply:opacity-100 py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation"
                 >
                   <Pencil className="w-2.5 h-2.5" />
                   <span>Sửa</span>
@@ -684,7 +684,7 @@ function ReplyItem({
                 <button
                   type="button"
                   onClick={handleDeleteClick}
-                  className="inline-flex items-center gap-0.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 font-medium cursor-pointer transition-colors opacity-75 group-hover/reply:opacity-100"
+                  className="inline-flex items-center gap-0.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 font-medium cursor-pointer transition-colors opacity-75 group-hover/reply:opacity-100 py-1 px-1.5 -my-1 -mx-0.5 rounded touch-manipulation"
                 >
                   <Trash2 className="w-2.5 h-2.5" />
                   <span>Xóa</span>

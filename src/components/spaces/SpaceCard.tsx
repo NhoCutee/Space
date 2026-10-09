@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Users, Sparkles } from 'lucide-react';
 import { JoinButton } from './JoinButton';
+import { getMediaVariantUrl } from '@/lib/media/responsive';
 
 interface SpaceCardProps {
   space: {
@@ -14,7 +15,7 @@ interface SpaceCardProps {
     membersCount: number;
     dropsCount: number;
     drops?: Array<{
-      media: Array<{ url: string }>;
+      media: Array<{ url: string; variants?: string | null }>;
     }>;
   };
   initialJoined?: boolean;
@@ -22,7 +23,7 @@ interface SpaceCardProps {
 
 export function SpaceCard({ space, initialJoined = false }: SpaceCardProps) {
   const previewImages = space.drops
-    ?.flatMap((d) => d.media.map((m) => m.url))
+    ?.flatMap((d) => d.media.map((m) => getMediaVariantUrl(m, 'thumb', m.url)))
     .slice(0, 3) || [];
 
   return (
@@ -36,6 +37,8 @@ export function SpaceCard({ space, initialJoined = false }: SpaceCardProps) {
                 <img
                   src={url}
                   alt={space.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
@@ -45,6 +48,8 @@ export function SpaceCard({ space, initialJoined = false }: SpaceCardProps) {
           <img
             src={space.coverImageUrl}
             alt={space.name}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         )}

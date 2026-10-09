@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { getMediaVariantUrl } from '@/lib/media/responsive';
 
 export interface SearchResultSpace {
   id: string;
@@ -65,7 +66,7 @@ export async function searchAll(query: string): Promise<UnifiedSearchResults> {
         include: {
           space: { select: { name: true, slug: true } },
           user: { select: { displayName: true } },
-          media: { take: 1, select: { url: true } },
+          media: { take: 1, select: { url: true, variants: true } },
         },
       }),
       prisma.user.findMany({
@@ -105,7 +106,7 @@ export async function searchAll(query: string): Promise<UnifiedSearchResults> {
         spaceName: d.space.name,
         spaceSlug: d.space.slug,
         authorName: d.user.displayName,
-        mediaUrl: d.media[0]?.url || null,
+        mediaUrl: getMediaVariantUrl(d.media[0], 'thumb', d.media[0]?.url) || null,
         reactionsCount: d.reactionsCount,
       })),
       users: activeUsers,
@@ -142,7 +143,7 @@ export async function searchAll(query: string): Promise<UnifiedSearchResults> {
       include: {
         space: { select: { name: true, slug: true } },
         user: { select: { displayName: true } },
-        media: { take: 1, select: { url: true } },
+        media: { take: 1, select: { url: true, variants: true } },
       },
     }),
     prisma.user.findMany({
@@ -200,7 +201,7 @@ export async function searchAll(query: string): Promise<UnifiedSearchResults> {
       spaceName: d.space.name,
       spaceSlug: d.space.slug,
       authorName: d.user.displayName,
-      mediaUrl: d.media[0]?.url || null,
+      mediaUrl: getMediaVariantUrl(d.media[0], 'thumb', d.media[0]?.url) || null,
       reactionsCount: d.reactionsCount,
     })),
     users,

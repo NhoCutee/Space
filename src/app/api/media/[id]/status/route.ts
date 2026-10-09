@@ -34,7 +34,7 @@ export async function GET(
     mediaId: media.id,
     status: media.status,
     url: media.url,
-    thumbnailUrl: parsedVariants?.thumbnail || parsedVariants?.small || media.url,
+    thumbnailUrl: parsedVariants?.thumb || parsedVariants?.thumbnail || parsedVariants?.small || media.url,
     width: media.width,
     height: media.height,
     aspectRatio: media.aspectRatio,

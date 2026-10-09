@@ -22,6 +22,7 @@ import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toggleSpaceMembership } from '@/actions/spaces';
 import { SaveToCollectionModal } from '@/components/drops/interactions/SaveToCollectionModal';
 import { UserIdentity } from '@/components/user';
+import { getMediaVariantUrl, getResponsiveImageProps } from '@/lib/media/responsive';
 import { toast } from 'sonner';
 
 interface HomeFeedViewProps {
@@ -36,16 +37,15 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
   );
   const [joiningSpaceId, setJoiningSpaceId] = useState<string | null>(null);
   const [saveModalDrop, setSaveModalDrop] = useState<{ id: string; title: string } | null>(null);
-  const [dismissedBanner, setDismissedBanner] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return localStorage.getItem('spaces:dismissed-onboarding-banner') === 'true';
-      } catch {
-        return false;
+  const [dismissedBanner, setDismissedBanner] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('spaces:dismissed-onboarding-banner') === 'true') {
+        setDismissedBanner(true);
       }
-    }
-    return false;
-  });
+    } catch {}
+  }, []);
 
   const handleDismissBanner = () => {
     setDismissedBanner(true);
@@ -451,10 +451,11 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
                           title={sample.title}
                         >
                           <img
-                            src={sample.mediaUrl}
+                            src={getMediaVariantUrl({ url: sample.mediaUrl, variants: sample.variants }, 'thumb', sample.mediaUrl)}
                             alt={sample.title}
                             className="w-full h-full object-cover"
                             loading="lazy"
+                            decoding="async"
                           />
                         </Link>
                       ))}
@@ -578,6 +579,13 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
                   ? `${primaryMedia.aspectRatio}`
                   : '16 / 10';
 
+              const responsiveImage = primaryMedia
+                ? getResponsiveImageProps(primaryMedia, {
+                    defaultVariant: 'small',
+                    sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw',
+                  })
+                : null;
+
               return (
                 <div
                   key={drop.id}
@@ -585,16 +593,19 @@ export function HomeFeedView({ initialData }: HomeFeedViewProps) {
                 >
                   {/* Media Image Container (Pure Visual Artwork - No Gradient Corruption) */}
                   <Link href={`/drop/${drop.id}`} className="relative overflow-hidden bg-secondary block">
-                    {primaryMedia ? (
+                    {responsiveImage ? (
                       <div
                         className="relative w-full overflow-hidden flex items-center justify-center"
                         style={{ aspectRatio: aspectRatioValue }}
                       >
                         <img
-                          src={primaryMedia.url}
+                          src={responsiveImage.src}
+                          srcSet={responsiveImage.srcSet}
+                          sizes={responsiveImage.sizes}
                           alt={drop.title}
                           className="w-full h-full object-cover"
                           loading="lazy"
+                          decoding="async"
                         />
 
                         {/* Quick Save Bookmark button floating on image (accessible on touch) */}

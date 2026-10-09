@@ -19,3 +19,4 @@ export * from './interactions/comments/CommentItem';
 
 // Viewer components
 export * from './viewer/DropCanvasViewer';
+export * from './viewer/DropAestheticPalette';

@@ -7,6 +7,7 @@ import { timeAgo } from '@/lib/utils';
 import { ReactionButton } from '../interactions/ReactionButton';
 import { SaveToCollectionModal } from '../interactions/SaveToCollectionModal';
 import { UserIdentity } from '@/components/user';
+import { getResponsiveImageProps } from '@/lib/media/responsive';
 
 export interface DropCardProps {
   drop: {
@@ -38,6 +39,7 @@ export interface DropCardProps {
       width: number;
       height: number;
       aspectRatio: number;
+      variants?: string | null;
     }>;
   };
   showSpaceBadge?: boolean;
@@ -54,6 +56,11 @@ export function DropCard({ drop, showSpaceBadge = false }: DropCardProps) {
     height: 800,
     aspectRatio: 1.5,
   };
+
+  const imageProps = getResponsiveImageProps(primaryMedia, {
+    defaultVariant: 'small',
+    sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw',
+  });
 
   const specsList = drop.parsedSpecs
     ? Object.entries(drop.parsedSpecs)
@@ -83,9 +90,12 @@ export function DropCard({ drop, showSpaceBadge = false }: DropCardProps) {
               </div>
             ) : (
               <img
-                src={primaryMedia.url}
+                src={imageProps.src}
+                srcSet={imageProps.srcSet}
+                sizes={imageProps.sizes}
                 alt={drop.title}
                 loading="lazy"
+                decoding="async"
                 onError={() => setImageError(true)}
                 className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
               />

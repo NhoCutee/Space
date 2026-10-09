@@ -3,15 +3,30 @@
  * Spaces — Visual Social Commons
  */
 
-// Target Image Variant Constants (Product Requirements)
-export const IMAGE_SIZE_LARGE_WIDTH = 1200;
-export const IMAGE_SIZE_MEDIUM_WIDTH = 640;
-export const IMAGE_SIZE_SMALL_WIDTH = 250;
+// Target Responsive Image Variant Constants (Redesigned from UI measurements & DPR)
+export const IMAGE_SIZE_THUMB_WIDTH = 240; // Micro-thumbnails, search results, drop ribbon, curated sample drops
+export const IMAGE_SIZE_SMALL_WIDTH = 640; // Desktop 4-col masonry cards (290px @ DPR 2), mobile 1-col feed, collection grid quadrants
+export const IMAGE_SIZE_MEDIUM_WIDTH = 960; // Tablet 2-col masonry (348px @ DPR 2), space card cover preview
+export const IMAGE_SIZE_LARGE_WIDTH = 1440; // Drop detail exhibition stage (805px @ DPR 1.8), tablet full view
+export const IMAGE_SIZE_DETAIL_WIDTH = 1920; // Fullscreen Lightbox modal, high-resolution visual inspection
+export const AVATAR_SIZE = 256; // Standard profile avatar (96px @ DPR 2.6)
+
+// Backward compatibility aliases
+export const THUMBNAIL_WIDTH = IMAGE_SIZE_THUMB_WIDTH;
 export const LOCAL_THUMBNAIL_WIDTH = 240;
 export const LOCAL_THUMBNAIL_HEIGHT = 200;
-export const THUMBNAIL_WIDTH = 500;
 
 export const IMAGE_VARIANTS_CONFIG = {
+  detail: {
+    name: 'detail',
+    width: IMAGE_SIZE_DETAIL_WIDTH,
+    fit: 'inside' as const,
+    withoutEnlargement: true,
+    quality: 85,
+    format: 'webp' as const,
+    suffix: 'detail',
+    description: 'High-resolution presentation in fullscreen lightbox modal (1920px max, aspect preserved)',
+  },
   large: {
     name: 'large',
     width: IMAGE_SIZE_LARGE_WIDTH,
@@ -20,48 +35,59 @@ export const IMAGE_VARIANTS_CONFIG = {
     quality: 85,
     format: 'webp' as const,
     suffix: 'large',
-    description: 'Full-width visual presentation in Drop detail view and lightbox modal',
+    description: 'Drop detail main exhibition stage and tablet full viewport (1440px max, aspect preserved)',
   },
   medium: {
     name: 'medium',
     width: IMAGE_SIZE_MEDIUM_WIDTH,
     fit: 'inside' as const,
     withoutEnlargement: true,
-    quality: 80,
+    quality: 82,
     format: 'webp' as const,
     suffix: 'medium',
-    description: 'Feed view, tablet viewport, and 2-column masonry layouts',
+    description: 'Tablet 2-column masonry layouts and space cover card previews (960px max, aspect preserved)',
   },
   small: {
     name: 'small',
     width: IMAGE_SIZE_SMALL_WIDTH,
     fit: 'inside' as const,
     withoutEnlargement: true,
-    quality: 80,
+    quality: 82,
     format: 'webp' as const,
     suffix: 'small',
-    description: 'Mobile feeds, compact lists, and user profile media grids',
+    description: 'Desktop 4-col masonry cards (290px @ DPR 2), mobile feeds, and collection quadrants (640px max)',
   },
+  thumb: {
+    name: 'thumb',
+    width: IMAGE_SIZE_THUMB_WIDTH,
+    fit: 'inside' as const,
+    withoutEnlargement: true,
+    quality: 80,
+    format: 'webp' as const,
+    suffix: 'thumb',
+    description: 'Micro-thumbnails, search results, curated rail sample strips, and detail viewer ribbon (240px max)',
+  },
+  // Backward compatibility variants
   thumbnail: {
     name: 'thumbnail',
-    width: THUMBNAIL_WIDTH,
+    width: IMAGE_SIZE_THUMB_WIDTH,
     fit: 'inside' as const,
     withoutEnlargement: true,
     quality: 80,
     format: 'webp' as const,
     suffix: 'thumbnail',
-    description: 'Standard 500px aspect-preserved thumbnail for collections and search cards',
+    description: 'Legacy alias for thumb variant',
   },
   localThumbnail: {
     name: 'localThumbnail',
     width: LOCAL_THUMBNAIL_WIDTH,
     height: LOCAL_THUMBNAIL_HEIGHT,
-    fit: 'cover' as const, // Explicit decision: 'cover' with center crop for fixed 240x200 card slots
+    fit: 'cover' as const,
     withoutEnlargement: false,
     quality: 80,
     format: 'webp' as const,
     suffix: 'local_thumbnail',
-    description: 'Fixed 240x200 card thumbnail (center crop cover) for compact fixed-aspect slots',
+    description: 'Legacy 240x200 fixed crop for backward compatibility',
   },
 } as const;
 

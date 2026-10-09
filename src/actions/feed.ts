@@ -45,7 +45,7 @@ export async function getHomeFeedData(
           drops: {
             take: 2,
             orderBy: { createdAt: 'desc' },
-            include: { media: { take: 1, select: { url: true, aspectRatio: true } } },
+            include: { media: { take: 1, select: { url: true, aspectRatio: true, variants: true } } },
           },
         },
       }),
@@ -84,6 +84,7 @@ export async function getHomeFeedData(
       title: d.title,
       mediaUrl: d.media[0]?.url || s.coverImageUrl,
       aspectRatio: d.media[0]?.aspectRatio || 1.33,
+      variants: d.media[0]?.variants || null,
     })),
   }));
 

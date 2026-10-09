@@ -12,3 +12,4 @@ export * from './processor';
 export * from './cloudinary';
 export * from './worker';
 export * from './client-compression';
+export * from './responsive';

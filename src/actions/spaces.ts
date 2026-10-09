@@ -45,7 +45,7 @@ export async function getSpaces(category?: string, query?: string) {
         include: {
           media: {
             take: 1,
-            select: { url: true, aspectRatio: true },
+            select: { url: true, aspectRatio: true, variants: true },
           },
         },
       },
@@ -99,7 +99,7 @@ export async function getSpaceBySlug(slug: string) {
         orderBy: { createdAt: 'desc' },
         include: {
           media: {
-            select: { id: true, url: true, width: true, height: true, aspectRatio: true },
+            select: { id: true, url: true, width: true, height: true, aspectRatio: true, variants: true },
           },
           user: {
             select: { id: true, username: true, displayName: true, avatarUrl: true },

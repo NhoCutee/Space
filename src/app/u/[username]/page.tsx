@@ -130,6 +130,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
                 width: true,
                 height: true,
                 aspectRatio: true,
+                variants: true,
               },
             },
             user: {
@@ -162,7 +163,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
                     media: {
                       take: 1,
                       orderBy: { sortOrder: 'asc' },
-                      select: { url: true },
+                      select: { url: true, variants: true },
                     },
                   },
                 },
@@ -189,7 +190,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
                     media: {
                       take: 1,
                       orderBy: { sortOrder: 'asc' },
-                      select: { url: true },
+                      select: { url: true, variants: true },
                     },
                   },
                 },
@@ -225,15 +226,15 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
       </div>
 
       {/* Profile Header Card */}
-      <div className="rounded-3xl glass border border-border/80 p-6 sm:p-8 shadow-xl relative overflow-hidden mb-8">
+      <div className="rounded-2xl sm:rounded-3xl glass border border-border/80 p-5 sm:p-8 shadow-xl relative overflow-hidden mb-6 sm:mb-8">
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5">
             <img
               src={targetUser.avatarUrl || defaultAvatar}
               alt={targetUser.displayName}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-border/80 shadow-md shrink-0"
+              className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-border/80 shadow-md shrink-0"
             />
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -327,10 +328,10 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
       ) : (
         <>
           {/* Meaningful Statistics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8">
             <Link
               href={`/u/${targetUser.username}?tab=drops`}
-              className={`p-4 rounded-2xl border transition-all text-center ${
+              className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all text-center ${
                 activeTab === 'drops'
                   ? 'bg-secondary/90 border-foreground/30 shadow-xs'
                   : 'bg-card border-border/70 hover:border-border'
@@ -347,7 +348,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
 
             <Link
               href={`/u/${targetUser.username}?tab=collections`}
-              className={`p-4 rounded-2xl border transition-all text-center ${
+              className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all text-center ${
                 activeTab === 'collections'
                   ? 'bg-secondary/90 border-foreground/30 shadow-xs'
                   : 'bg-card border-border/70 hover:border-border'
@@ -364,7 +365,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
 
             <Link
               href={`/u/${targetUser.username}?tab=created`}
-              className={`p-4 rounded-2xl border transition-all text-center ${
+              className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all text-center ${
                 activeTab === 'created'
                   ? 'bg-secondary/90 border-foreground/30 shadow-xs'
                   : 'bg-card border-border/70 hover:border-border'
@@ -382,7 +383,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
             {canViewJoinedSpaces ? (
               <Link
                 href={`/u/${targetUser.username}?tab=joined`}
-                className={`p-4 rounded-2xl border transition-all text-center ${
+                className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all text-center ${
                   activeTab === 'joined'
                     ? 'bg-secondary/90 border-foreground/30 shadow-xs'
                     : 'bg-card border-border/70 hover:border-border'
@@ -397,7 +398,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
                 </div>
               </Link>
             ) : (
-              <div className="p-4 rounded-2xl border border-border/40 bg-card/40 text-center opacity-60">
+              <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-border/40 bg-card/40 text-center opacity-60">
                 <div className="text-xl sm:text-2xl font-black text-muted-foreground">
                   —
                 </div>

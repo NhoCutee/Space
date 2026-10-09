@@ -58,13 +58,15 @@ export async function executeImageProcessingJob(job: MediaJobPayload): Promise<v
       dropId
     );
 
-    // 5. Structure variant URLs
+    // 5. Structure variant URLs with new responsive keys and backward-compatible aliases
     const variantUrls: Record<string, string> = {
+      detail: uploadedVariants.detail?.secureUrl || uploadedVariants.large.secureUrl,
       large: uploadedVariants.large.secureUrl,
       medium: uploadedVariants.medium.secureUrl,
       small: uploadedVariants.small.secureUrl,
-      thumbnail: uploadedVariants.thumbnail.secureUrl,
-      localThumbnail: uploadedVariants.localThumbnail.secureUrl,
+      thumb: uploadedVariants.thumb?.secureUrl || uploadedVariants.small.secureUrl,
+      thumbnail: uploadedVariants.thumbnail?.secureUrl || uploadedVariants.thumb?.secureUrl || uploadedVariants.small.secureUrl,
+      localThumbnail: uploadedVariants.localThumbnail?.secureUrl || uploadedVariants.thumb?.secureUrl || uploadedVariants.small.secureUrl,
     };
 
     // 6. Update Database with READY status and dimensions
