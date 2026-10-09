@@ -441,6 +441,15 @@ export function DropComposer({
               if (attempts >= maxAttempts) throw pollErr;
             }
           }
+
+          // Timeout safeguard: if polling completed without reaching READY status
+          setMediaList((prev) =>
+            prev.map((item) =>
+              item.clientKey === clientKey && item.status !== "ready"
+                ? { ...item, status: "error", errorMessage: "Optimization timed out. Please try again." }
+                : item
+            )
+          );
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);

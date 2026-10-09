@@ -9,7 +9,10 @@ import {
   MAX_UPLOAD_FILE_SIZE,
   MEDIA_STATUS,
   stageOriginalUpload,
+  deleteStagedOriginal,
   publishMediaJob,
+  processImageSource,
+  uploadAllVariants,
   MediaJobPayload,
 } from '@/lib/media';
 import '@/lib/media/worker'; // Ensure worker daemon is initialized
@@ -121,7 +124,76 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 7. Create lightweight RabbitMQ Job payload (No binary data or secrets in queue)
+    // In Serverless environments (e.g. Vercel, AWS Lambda) or when synchronous processing is configured:
+    // 1) Background daemons cannot run persistently.
+    // 2) Filesystem /tmp is ephemeral and not shared with external workers.
+    // Therefore, process directly in-memory and upload to Cloudinary immediately (takes ~1s).
+    const isServerless = Boolean(
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.NEXT_SERVERLESS ||
+      process.env.SYNC_MEDIA_PROCESSING === 'true'
+    );
+
+    if (isServerless) {
+      try {
+        const processingResult = await processImageSource(buffer);
+        const uploadedVariants = await uploadAllVariants(mediaId, processingResult.variants, dropId);
+
+        const variantUrls: Record<string, string> = {
+          detail: uploadedVariants.detail?.secureUrl || uploadedVariants.large.secureUrl,
+          large: uploadedVariants.large.secureUrl,
+          medium: uploadedVariants.medium.secureUrl,
+          small: uploadedVariants.small.secureUrl,
+          thumb: uploadedVariants.thumb?.secureUrl || uploadedVariants.small.secureUrl,
+          thumbnail: uploadedVariants.thumbnail?.secureUrl || uploadedVariants.thumb?.secureUrl || uploadedVariants.small.secureUrl,
+          localThumbnail: uploadedVariants.localThumbnail?.secureUrl || uploadedVariants.thumb?.secureUrl || uploadedVariants.small.secureUrl,
+        };
+
+        const updated = await prisma.dropMedia.update({
+          where: { id: mediaId },
+          data: {
+            status: MEDIA_STATUS.READY,
+            url: uploadedVariants.large.secureUrl,
+            publicId: uploadedVariants.large.publicId,
+            variants: JSON.stringify(variantUrls),
+            width: processingResult.originalDimensions.width,
+            height: processingResult.originalDimensions.height,
+            aspectRatio: processingResult.originalDimensions.aspectRatio,
+            blurhash: processingResult.blurhash || null,
+          },
+        });
+
+        // Clean up staged temporary file
+        await deleteStagedOriginal(sourcePath).catch(() => {});
+
+        return NextResponse.json({
+          mediaId,
+          status: MEDIA_STATUS.READY,
+          url: updated.url,
+          width: updated.width,
+          height: updated.height,
+          aspectRatio: updated.aspectRatio,
+          blurhash: updated.blurhash,
+          success: true,
+        });
+      } catch (procErr: unknown) {
+        console.error('[UploadAPI] Direct serverless processing failed:', procErr);
+        await prisma.dropMedia.update({
+          where: { id: mediaId },
+          data: {
+            status: MEDIA_STATUS.FAILED,
+            errorMessage: procErr instanceof Error ? procErr.message : 'Processing failed',
+          },
+        });
+        return NextResponse.json(
+          { error: 'Failed to process and optimize image' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // 7. Dedicated server environment: dispatch lightweight job to RabbitMQ queue
     const job: MediaJobPayload = {
       jobId: randomUUID(),
       mediaId,
