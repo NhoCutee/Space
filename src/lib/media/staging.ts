@@ -1,9 +1,13 @@
 import { resolve } from 'path';
+import { tmpdir } from 'os';
 import { mkdir, writeFile, unlink, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import { randomUUID } from 'crypto';
 
-const STAGING_DIR = resolve(process.cwd(), 'tmp', 'staging');
+// Use os.tmpdir() to guarantee write permissions across all environments,
+// particularly serverless platforms (Vercel, AWS Lambda) where process.cwd() (/var/task)
+// is read-only and only os.tmpdir() (/tmp) is writable.
+const STAGING_DIR = resolve(tmpdir(), 'spaces-staging');
 
 export type AllowedImageMime = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
 
